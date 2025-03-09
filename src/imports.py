@@ -4,16 +4,17 @@
 from PySide6.QtWidgets import (
     QWidget, QApplication, QLabel, QSizePolicy,
     QHBoxLayout, QVBoxLayout, QStackedLayout,
-    QPushButton, QSpacerItem
+    QPushButton, QSpacerItem, QMainWindow
 )
 
 from PySide6.QtCore import (
-    Qt, QSize
+    Qt, QSize, QPropertyAnimation, QEasingCurve,
+    QPoint, QParallelAnimationGroup
 )
 
 from PySide6.QtGui import (
     QIcon, QColor, QPainter, QPixmap,
-    QResizeEvent
+    QResizeEvent, QTransform
 )
 
 from PySide6.QtSvg import (

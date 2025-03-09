@@ -1,7 +1,11 @@
 from src.imports import *
 
 class TopBar(QWidget):
-    def __init__(self, parent: QWidget, main_window: QWidget):
+    def __init__(
+            self,
+            parent: QWidget,
+            main_window: QWidget
+    ):
         super().__init__(parent)
         
         # Assigning args to self.
@@ -12,14 +16,7 @@ class TopBar(QWidget):
         self._set_widgets()
     
     def _set_design(self):
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.setFixedHeight(50)
-        
-        self.main_layout = QHBoxLayout()
-        self.main_layout.setContentsMargins(0, 0, 0, 0)
-        self.main_layout.setSpacing(0)
-        
-        self.setLayout(self.main_layout)
+        pass
     
     def _set_widgets(self):
         self.background = self.Background(
@@ -33,10 +30,17 @@ class TopBar(QWidget):
             config = self.config
         )
         
-        self.main_layout.addWidget(self.buttons)
+        self.hide_button = HideButton(
+            self,
+            self.config.hide_button
+        )
     
     def resizeEvent(self, event: QResizeEvent):
+        # Move the background colour with the top_bar widget.
         self.background.update_width(self.width())
+        
+        # Resize the buttons widget to the width of the top_bar.
+        self.buttons.setFixedWidth(self.width())
         
         return super().resizeEvent(event)
     
@@ -47,9 +51,7 @@ class TopBar(QWidget):
                 config: TopBarConfig
         ):
             super().__init__(parent)
-            
             self.setStyleSheet(f"background-color: {config.background_colour}")
-            self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             self.setFixedHeight(50)
         
         def update_width(self, width: int):
@@ -96,68 +98,150 @@ class TopBar(QWidget):
             self.setLayout(self.main_layout)
         
         def _set_widgets(self):
-            self.hide_button = self.HideButton(self, self.config.hide_button)
-            self.left_layout.addWidget(self.hide_button)
-            
-            self.profile_button = self.ProfileButton(self, self.config.profile_button)
+            self.profile_button = ProfileButton(self, self.config.profile_button)
             self.right_layout.addWidget(self.profile_button)
 
-        class TopBarButton(QPushButton):
-            def __init__(self, parent: QWidget, config: TopBarConfig.Button):
-                super().__init__(parent)
-                self.config = config
-                
-                self.original_width = 50
-                self.original_height = 50
-                
-                self._set_design()
-                self._set_connections()
-                
-            def _set_design(self):
-                self.setStyleSheet("background-color: transparent; border: none;")
-                
-                self.setFixedSize(self.original_width, self.original_height)
-                
-                self._set_icon()
-            
-            def _set_icon(self) -> QIcon:
-                values = self.config.icon_colour.replace("rgb(", "").replace(")", "").split(",")
-                red = int(values[0])
-                green = int(values[1])
-                blue = int(values[2])
-                
-                self.recoloured_svg = change_svg_colour(
-                    src = self.config.icon_src,
-                    size = (self.original_width, self.original_height),
-                    colour = (red, green, blue)
-                )
-                
-                self.setIcon(QIcon(self.recoloured_svg))
-                self.setIconSize(QSize(self.original_width, self.original_height))
-                
-            def _set_connections(self):
-                self.pressed.connect(self._on_press)
-                self.released.connect(self._on_release)
-            
-            def _on_press(self):
-                pressed_width = self.original_width - 5
-                pressed_height = self.original_height - 5
-                
-                self.setIconSize(QSize(pressed_width, pressed_height))
-            
-            def _on_release(self):
-                self.setIconSize(QSize(self.original_width, self.original_height))
+class TopBarButton(QPushButton):
+    def __init__(self, parent: QWidget, config: TopBarConfig.Button):
+        super().__init__(parent)
+        self.config = config
         
-        class HideButton(TopBarButton):
-            def __init__(self, parent: QWidget, config: TopBarConfig.Button):
-                super().__init__(parent, config)
-            
-            def _on_click(self):
-                pass
+        self.original_width = 50
+        self.original_height = 50
         
-        class ProfileButton(TopBarButton):
-            def __init__(self, parent: QWidget, config: TopBarConfig.Button):
-                super().__init__(parent, config)
+        self._set_design()
+        self._set_connections()
+        
+    def _set_design(self):
+        self.setStyleSheet("background-color: transparent; border: none;")
+        
+        self.setFixedSize(self.original_width, self.original_height)
+        
+        self._set_icon()
+    
+    def _set_icon(self) -> QIcon:
+        values = self.config.icon_colour.replace("rgb(", "").replace(")", "").split(",")
+        red = int(values[0])
+        green = int(values[1])
+        blue = int(values[2])
+        
+        self.recoloured_svg = change_svg_colour(
+            src = self.config.icon_src,
+            size = (self.original_width, self.original_height),
+            colour = (red, green, blue)
+        )
+        
+        self.setIcon(QIcon(self.recoloured_svg))
+        self.setIconSize(QSize(self.original_width, self.original_height))
+        
+    def _set_connections(self):
+        self.pressed.connect(self._on_press)
+        self.released.connect(self._on_release)
+    
+    def _on_press(self):
+        pressed_width = self.original_width - 5
+        pressed_height = self.original_height - 5
+        
+        self.setIconSize(QSize(pressed_width, pressed_height))
+    
+    def _on_release(self):
+        self.setIconSize(QSize(self.original_width, self.original_height))
+    
+    def change_icon(self, src: str):
+        """A function to change the icon of the button, re-colouring the icon's SVG to the base icon colour.
+
+        Args:
+            src (str): Relative path of the icon.
+        """
+        values = self.config.icon_colour.replace("rgb(", "").replace(")", "").split(",")
+        red = int(values[0])
+        green = int(values[1])
+        blue = int(values[2])
+        
+        self.recoloured_svg = change_svg_colour(
+            src = path(src),
+            size = (self.original_width, self.original_height),
+            colour = (red, green, blue)
+        )
+        
+        self.setIcon(QIcon(self.recoloured_svg))
+        self.setIconSize(QSize(self.original_width, self.original_height))
+        
+class HideButton(TopBarButton):
+    def __init__(self, parent: QWidget, config: TopBarConfig.Button):
+        super().__init__(parent, config)
+        self._is_hidden = False
+        
+        self.clicked.connect(self._on_click)
+    
+    def get_hideable_widgets(self) -> list[QWidget]:
+        """A function to retrieve a list of widgets wanted to animate in the hide button.
+
+        Returns:
+            list[QWidget]: A list of widgets to hide.
+        """
+        top_bar = self.parentWidget()
+        buttons = self.parentWidget().buttons
+        
+        hideable_widgets : list[QWidget] = []
+        hideable_widgets.append(buttons)
+        hideable_widgets.append(top_bar.background) # Background widget.
+        
+        return hideable_widgets
+    
+    def _on_click(self):
+        def get_animation(widget: QWidget, anim_type: str) -> QPropertyAnimation:
+            """A function to initialise a hide animation on a widget.
+
+            Args:
+                widget (QWidget): The widget to hide.
+                type (str): Type of animation to initialise, "show" or "hide"
+            """
+            start_position = widget.pos()
+
+            if anim_type == "hide":
+                end_position = QPoint(widget.x(), widget.y() - 50)
+                
+            elif anim_type == "show":
+                end_position = QPoint(widget.x(), widget.y() + 50)
             
-            def _on_click(self):
-                pass
+            animation = QPropertyAnimation(widget, b"pos") # Animating widgets position.
+            animation.setStartValue(start_position)
+            animation.setEndValue(end_position)
+            animation.setDuration(100) # 0.1 second.
+            animation.setEasingCurve(QEasingCurve.Type.OutQuad)
+            
+            return animation
+        
+        # Set the anim type and the icon to match the type.
+        if self._is_hidden is False:
+            print("Hiding topbar")
+            
+            self.change_icon("resources/assets/icons/buttons/show_up.svg")
+            self._is_hidden = True
+            
+            anim_type = "hide"
+        
+        else:
+            print("Showing topbar")
+            
+            self.change_icon("resources/assets/icons/buttons/hide_up.svg")
+            self._is_hidden = False
+            
+            anim_type = "show"
+        
+        animation_group = QParallelAnimationGroup(self) # Create a group of animations to execute simultaneously.
+        
+        for widget in self.get_hideable_widgets(): # Add each hide animation to the animation group.
+            animation = get_animation(widget, anim_type)
+            animation_group.addAnimation(animation)
+            
+        animation_group.start() # Start the group.
+                
+class ProfileButton(TopBarButton):
+    def __init__(self, parent: QWidget, config: TopBarConfig.Button):
+        super().__init__(parent, config)
+        self.clicked.connect(self._on_click)
+    
+    def _on_click(self):
+        print("Clicking profile...")

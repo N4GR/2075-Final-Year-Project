@@ -22,5 +22,27 @@ class TopBarConfig:
     
     class Button:
         def __init__(self, button_data: dict):
-            self.icon_src : str = button_data["src"]
+            self.icon_src : str = path(button_data["src"])
+            self.icon_colour : str = button_data["IconColour"]
+
+class LoginConfig:
+    def __init__(self):
+        data = get_config("Login")
+        
+        self.background_colour : str = data["BackgroundColour"]
+        self.triangle = self.Triangle(data["Triangle"])
+        self.texture = self.Texture(data["Texture"])
+    
+    class Texture:
+        def __init__(self, texture_data: dict):
+            self.icon_src : str = path(texture_data["src"])
+            self.icon_colour : str = texture_data["IconColour"]
+    
+    class Triangle:
+        def __init__(self, triangle_data: dict):
+            self.background_colour : str = triangle_data["BackgroundColour"]
+    
+    class Button:
+        def __init__(self, button_data: dict):
+            self.icon_src : str = path(button_data["src"])
             self.icon_colour : str = button_data["IconColour"]

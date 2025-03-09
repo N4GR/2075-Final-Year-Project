@@ -2,6 +2,16 @@
     "MainWindow": {
         "BackgroundColour": "rgb(31, 31, 31)"
     },
+    "Login": {
+        "BackgroundColour": "rgb(255, 0, 0)",
+        "Triangle": {
+            "BackgroundColour": "rgb(31, 31, 31)"
+        },
+        "Texture": {
+            "src": "resources/assets/icons/buttons/hide_up.svg",
+            "IconColour": "rgb(255, 0, 0)"
+        }
+    },
     "TopBar": {
         "BackgroundColour": "rgb(24, 24, 24)",
         "HideButton": {
