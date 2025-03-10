@@ -68,6 +68,14 @@ class Login(QWidget):
         
         return super().resizeEvent(event)
     
+    def deleteLater(self):
+        def fade_animation():
+            pass
+        
+        print("closing!")
+        
+        return super().deleteLater()
+    
     class Title(QWidget):
         def __init__(self, parent: QWidget):
             super().__init__(parent)
@@ -308,8 +316,8 @@ class Login(QWidget):
         
         def _set_design(self):
             self.setFixedSize(
-                self.parentWidget().width() * 0.5,
-                self.parentWidget().height() * 0.5
+                400,
+                300
             )
             
             self.main_layout = QVBoxLayout()
@@ -334,6 +342,8 @@ class Login(QWidget):
             self.main_layout.addWidget(self.buttons)
         
         def resizeEvent(self, event: QResizeEvent):
+            print(self.size())
+            
             self.background.setFixedSize(
                 self.width() - 10,
                 self.height() - 10

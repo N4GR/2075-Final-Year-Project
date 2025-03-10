@@ -15,6 +15,8 @@ class MainWindow(QWidget):
         self.network_manager = network_manager
         self.config = MainWindowConfig()
         
+        self.old_width = 800
+        
         self._set_design()
         self._init_widgets()
         self._init_layout()
@@ -47,13 +49,36 @@ class MainWindow(QWidget):
         self.main_layout.addSpacing(0)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
     
-    def resizeEvent(self, event):
+    def resizeEvent(self, event: QResizeEvent):
+        new_width = self.width()
+        width_different = new_width - self.old_width
+        
         self.top_bar.setFixedWidth(self.width()) # Top_Bar widget to fill main_window width.
         
         try:
-            self.login.setFixedSize(self.width(), self.height()) # Resize login screen to fill main_window area.
+            # Move the drop-down relative to the moved position, if it exists.
+            drop_menu = self.top_bar.buttons.profile_button.drop_menu
+            drop_menu.move(
+                drop_menu.pos().x() + width_different,
+                drop_menu.y()
+            )
+
+        except AttributeError:
+            pass
+        
         except RuntimeError:
-            pass # If the login screen is deleted, ignore Runtime errors.
+            pass
+        
+        try:
+            self.login.setFixedSize(self.size()) # Login screen will always fill window.
+
+        except AttributeError:
+            pass # If the widget never existed, ignore error.
+        
+        except RuntimeError:
+            pass # If the widget was deleted, ignore error.
+        
+        self.old_width = new_width
         
         return super().resizeEvent(event)
     
