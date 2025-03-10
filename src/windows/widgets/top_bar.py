@@ -1,5 +1,7 @@
 from src.imports import *
 
+from src.windows.widgets.login import Login
+
 class TopBar(QWidget):
     def __init__(
             self,
@@ -105,7 +107,7 @@ class TopBarButton(QPushButton):
     def __init__(
             self,
             parent: QWidget,
-            config: TopBarConfig.Button
+            config: TopBarConfig.ProfileButton
     ):
         super().__init__(parent)
         self.config = config
@@ -250,41 +252,57 @@ class ProfileButton(TopBarButton):
     def __init__(
             self,
             parent: QWidget,
-            config: TopBarConfig.Button,
+            config: TopBarConfig.ProfileButton,
             main_window: QWidget
     ):
         super().__init__(parent, config)
         self.main_window = main_window
-        
-        #self.drop_menu = self.DropDownMenu(self.main_window, self.main_window)
-        
+        self._is_showing = False
+
         self.clicked.connect(self._on_click)
     
     def _on_click(self):
         print("Clicking profile...")
-        self.drop_menu = self.DropDownMenu(self.main_window, self.main_window)
-        self.drop_menu.show()
-        #self.drop_menu = self.DropDownMenu(self.main_window, self.main_window)
+        if self._is_showing is True:
+            self.drop_menu.deleteLater()
+            self._is_showing = False
+            
+            return
+        
+        self.drop_menu = self.DropDownMenu(
+            self.main_window,
+            self.main_window,
+            self.config.drop_menu
+        )
+        
+        self._is_showing = True
     
     class DropDownMenu(QWidget):
         def __init__(
                 self,
                 parent: QWidget,
-                main_window: QWidget
+                main_window: QWidget,
+                config: TopBarConfig.ProfileButton.DropMenu
         ):
             super().__init__(parent)
             self.main_window = main_window
+            self.config = config
             
             self._set_design()
             self._set_widgets()
+            
+            self.shadow_size_offset = 10
+            self.setFixedHeight(self.sizeHint().height() + self.shadow_size_offset)
+            self.setFixedWidth(self.sizeHint().width() + self.shadow_size_offset)
+            
+            self.setGraphicsEffect(self.get_dropshadow())
+            self.show()
         
         def _set_design(self):
-            self.setFixedSize(150, 75)
-            
             # Create a layout for the drop menu.
             self.main_layout = QVBoxLayout()
-            self.main_layout.setSpacing(0)
-            self.main_layout.setContentsMargins(0, 0, 0 ,0)
+            self.main_layout.setSpacing(3)
+            self.main_layout.setContentsMargins(0, 5, 0, 5)
             self.setLayout(self.main_layout)
             
             # Move the menu relative to the cursor clicked position.
@@ -297,37 +315,133 @@ class ProfileButton(TopBarButton):
             ) # Move to cursor position.
         
         def _set_widgets(self):
-            self.background = self.Background(self)
-            self.username = self.Username(self)
+            self.background = self.Background(self, self.config)
+            self.username = self.Username(self, self.config)
+            self.settings = self.SettingsButton(self, self.config)
+            self.logout = self.LogoutButton(
+                self,
+                self.main_window,
+                self.config
+            )
             
-            self.main_layout.addWidget(self.username, alignment = Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+            self.main_layout.addWidget(
+                self.username,
+                alignment = Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft
+            )
+            self.main_layout.addWidget(self.settings)
+            self.main_layout.addWidget(self.logout)
+            
+        def get_dropshadow(self) -> QGraphicsDropShadowEffect:
+            shadow = QGraphicsDropShadowEffect(self)
+            shadow.setBlurRadius(10)
+            shadow.setOffset(0, 0)
+            shadow.setColor(QColor(0, 0, 0, 160))
+            
+            return shadow
+        
+        def resizeEvent(self, event):
+            self.background.setFixedHeight(self.height() - self.shadow_size_offset)
+            self.background.setFixedWidth(self.width() - self.shadow_size_offset)
+            
+            return super().resizeEvent(event)
         
         class Background(QLabel):
-            def __init__(self, parent: QWidget):
+            def __init__(
+                    self,
+                    parent: QWidget,
+                    config: TopBarConfig.ProfileButton.DropMenu
+            ):
                 super().__init__(parent)
-                self.setFixedSize(self.parentWidget().size()) # Set size to fill drop menu.
-                self.setStyleSheet("background-color: white;")
+                self.shadow_size_offset = 10
+                
+                self.setFixedHeight(self.parentWidget().height() - self.shadow_size_offset)
+                self.setFixedWidth(self.parentWidget().width() - self.shadow_size_offset)
+                
+                border_radius = 10
+                self.setStyleSheet(
+                    f"background-color: {config.background_colour};"
+                    f"border-top-left-radius: {border_radius}px;"
+                    f"border-bottom-left-radius: {border_radius}px;"
+                    f"border-bottom-right-radius: {border_radius}px;"
+                )
         
         class Username(QLabel):
-            def __init__(self, parent: QWidget):
+            def __init__(
+                    self,
+                    parent: QWidget,
+                    config: TopBarConfig.ProfileButton.DropMenu
+            ):
                 super().__init__(parent)
                 self.setText("Karl")
-                self.setStyleSheet("background-color: transparent; color: black;")
+                self.setStyleSheet(
+                    "background-color: transparent;"
+                    f"color: {config.text_colour};"
+                )
                 
-                self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
                 self.setFixedHeight(self.sizeHint().height())
+                self.setFixedWidth(100)
                 
-                self.setFont(self.get_font())
-            
-            def get_font(self) -> QFont:
-                font_id = QFontDatabase.addApplicationFont(path("resources/assets/fonts/Outfit-Bold.ttf"))
-                font_families = QFontDatabase.applicationFontFamilies(font_id)
+                font = get_font(weight = "bold")
+                font.setPointSize(12)
                 
-                font = QFont(font_families[0], 10)
-                
-                return font
+                self.setFont(font)
 
-        class Settings(QPushButton):
-            def __init__(self, parent: QWidget):
+        class Button(QPushButton):
+            def __init__(
+                    self,
+                    parent: QWidget,
+                    config: TopBarConfig.ProfileButton.DropMenu
+            ):
                 super().__init__(parent)
+                self.setFixedHeight(25)
+                self.setFixedWidth(100)
+                
+                font = get_font()
+                font.setPointSize(10)
+                self.setFont(font)
+                
+                self.setStyleSheet(
+                    f"background-color: {config.label_colour};"
+                    f"color: {config.text_colour};"
+                    "padding: 0px;"
+                )
+        
+        class SettingsButton(Button):
+            def __init__(
+                    self,
+                    parent: QWidget,
+                    config: TopBarConfig.ProfileButton.DropMenu
+            ):
+                super().__init__(parent, config)
                 self.setText("Settings")
+        
+        class LogoutButton(Button):
+            def __init__(
+                    self,
+                    parent: QWidget,
+                    main_window: QWidget,
+                    config: TopBarConfig.ProfileButton.DropMenu
+            ):
+                super().__init__(parent, config)
+                self.setText("Logout")
+                
+                self.main_window = main_window
+                
+                self.clicked.connect(self._on_click)
+            
+            def _on_click(self):
+                """A function to hide the top_bar and recreate the login screen."""
+                top_bar : QWidget = self.main_window.top_bar
+                top_bar.hide()
+                
+                self.main_window.login = Login(
+                    parent = self.main_window,
+                    main_window = self.main_window
+                )
+                self.main_window.login.show()
+                
+                profile_button = top_bar.buttons.profile_button
+                profile_button._is_showing = False
+                
+                # Delete the dropdown menu.
+                profile_button.drop_menu.deleteLater()

@@ -59,12 +59,17 @@ class MainWindow(QWidget):
     
     def mousePressEvent(self, event: QMouseEvent):
         try:
-            drop_menu = self.top_bar.buttons.profile_button.drop_menu
+            profile_button = self.top_bar.buttons.profile_button
+            drop_menu = profile_button.drop_menu
             
             if not drop_menu.geometry().contains(event.pos()): # User clicked outside drop menu.
                 drop_menu.deleteLater() # Delete the drop menu.
+                profile_button._is_showing = False # Set the drop_menu as no longer showing.
         
         except AttributeError:
             pass # If the variables don't exist, pass the error and ignore it.
+        
+        except RuntimeError:
+            pass # Once the widget is deleted, runtime error occours - ignore.
         
         return super().mousePressEvent(event)

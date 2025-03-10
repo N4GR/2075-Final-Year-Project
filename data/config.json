@@ -31,7 +31,12 @@
         },
         "ProfileButton": {
             "src": "resources/assets/icons/buttons/profile_up.svg",
-            "IconColour": "rgb(191, 0, 48)"
+            "IconColour": "rgb(191, 0, 48)",
+            "DropMenu": {
+                "BackgroundColour": "rgb(0, 0, 0)",
+                "LabelColour": "rgb(255, 255, 255)",
+                "TextColour": "rgb(191, 0, 48)"
+            }
         }
     }
 }

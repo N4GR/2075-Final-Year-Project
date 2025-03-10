@@ -18,12 +18,25 @@ class TopBarConfig:
         
         self.background_colour : str = data["BackgroundColour"]
         self.hide_button = self.Button(data["HideButton"])
-        self.profile_button = self.Button(data["ProfileButton"])
+        self.profile_button = self.ProfileButton(data["ProfileButton"])
     
     class Button:
         def __init__(self, button_data: dict):
             self.icon_src : str = path(button_data["src"])
             self.icon_colour : str = button_data["IconColour"]
+    
+    class ProfileButton:
+        def __init__(self, button_data: dict):
+            self.icon_src : str = path(button_data["src"])
+            self.icon_colour : str = button_data["IconColour"]
+            
+            self.drop_menu = self.DropMenu(button_data["DropMenu"])
+            
+        class DropMenu:
+            def __init__(self, drop_menu_data: dict):
+                self.background_colour = drop_menu_data["BackgroundColour"]
+                self.label_colour = drop_menu_data["LabelColour"]
+                self.text_colour = drop_menu_data["TextColour"]
 
 class LoginConfig:
     def __init__(self):

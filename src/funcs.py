@@ -70,4 +70,7 @@ def get_font(
     
     font = QFont(font_family)
     
+    if "bold" in src.lower():
+        font.setBold(True)
+    
     return font

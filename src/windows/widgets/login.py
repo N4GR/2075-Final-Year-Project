@@ -115,15 +115,10 @@ class Login(QWidget):
             def _set_design(self):
                 self.setText("METAPHRAST")
                 
-                self.setFont(self.get_font())
-            
-            def get_font(self) -> QFont:
-                font_id = QFontDatabase.addApplicationFont(path("resources/assets/fonts/Outfit-Bold.ttf"))
-                font_families = QFontDatabase.applicationFontFamilies(font_id)
+                font = get_font(weight = "bold")
+                font.setPointSize(24)
                 
-                font = QFont(font_families[0], 24)
-                
-                return font
+                self.setFont(font)
        
     class Background(QLabel):
         def __init__(
@@ -409,7 +404,7 @@ class Login(QWidget):
                     self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
                     self.setFixedHeight(40)
                     
-                    font = self.font()
+                    font = get_font()
                     font.setPointSize(10)
                     
                     self.setFont(font)
@@ -419,8 +414,8 @@ class Login(QWidget):
                     super().__init__(parent, text = title)
                     self.setStyleSheet("background-color: transparent;")
                     
-                    font = self.font()
-                    font.setBold(True)
+                    font = get_font(weight = "bold")
+                    font.setPointSize(12)
                     
                     self.setFont(font)
         
@@ -466,13 +461,12 @@ class Login(QWidget):
                         "border-radius: 8px;"
                     )
                     
-                    font = self.font()
+                    font = get_font(weight = "Bold")
                     font.setPointSize(13)
-                    font.setBold(True)
                     
                     self.setFont(font)
                     
-                    self.setText("Log In")
+                    self.setText("LOGIN")
                 
                 def _set_connections(self):
                     self.clicked.connect(self._on_click)
@@ -506,9 +500,8 @@ class Login(QWidget):
                 def _set_design(self):
                     self.setFixedWidth(100)
                     
-                    font = self.font()
+                    font = get_font(weight = "bold")
                     font.setPointSize(10)
-                    font.setBold(True)
                     
                     self.setFont(font)
                     
