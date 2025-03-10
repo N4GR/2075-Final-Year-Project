@@ -50,9 +50,12 @@ class Login(QWidget):
         self.texture.move(half_x, half_y)
         self.texture.setFixedSize(half_x, half_y)
         
-        # Move the menu with an offset of the main X and Y.
-        self.menu.move(self.width() * 0.1, self.height() * 0.1) # 10% of height and width.
-        self.menu.setFixedSize(self.width() * 0.25, self.height() * 0.5) # 25% of width, 50% of height.
+        self.menu.move(
+            int(self.width() / 2)
+            - int(self.menu.width() / 2),
+            int(self.height() / 2)
+            - int(self.menu.height() / 2)
+        ) # Move menu to always centre.
         
         return super().resizeEvent(event)
             
@@ -203,12 +206,14 @@ class Login(QWidget):
             self._set_widgets()
         
         def _set_design(self):
-            self.setFixedWidth(200)
-            self.setFixedHeight(300)
-        
+            self.setFixedSize(
+                self.parentWidget().width() * 0.5,
+                self.parentWidget().height() * 0.5
+            )
+            
             self.main_layout = QVBoxLayout()
             self.main_layout.setSpacing(10)
-            self.main_layout.setContentsMargins(5, 50, 5, 50)
+            self.main_layout.setContentsMargins(10, 10, 10, 10)
             
             self.setLayout(self.main_layout)
         
@@ -225,7 +230,7 @@ class Login(QWidget):
             
             self.main_layout.addWidget(self.username)
             self.main_layout.addWidget(self.password)
-            self.main_layout.addStretch()
+            #self.main_layout.addStretch()
             self.main_layout.addWidget(self.buttons)
         
         def resizeEvent(self, event: QResizeEvent):
@@ -248,36 +253,59 @@ class Login(QWidget):
                     "border-radius: 15px"
                 )
         
-        class TextInput(QLineEdit):
+        class InputArea(QWidget):
             def __init__(self, parent: QWidget, title: str):
-                super().__init__(parent, placeholderText = title)
+                super().__init__(parent)
                 self._set_design()
-        
-            def _set_design(self):
-                self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-                self.setFixedHeight(50)
                 
-                self.setStyleSheet("border: none;")
-                
-                font = self.font()
-                font.setPointSize(15)
-                font.setBold(True)
-                
-                self.setFont(font)
-        
-        class UsernameInput(TextInput):
-            def __init__(self, parent: QWidget):
-                super().__init__(parent, "Username")
-        
-        class PasswordInput(TextInput):
-            def __init__(self, parent: QWidget):
-                super().__init__(parent, "Password")
+                self.text_input = self.TextInput(parent)
+                self.label = self.TextInputLabel(parent, title)
             
-            def _set_design(self): # Design hook from TextInput.
-                self.setEchoMode(QLineEdit.EchoMode.Password)
+                self.main_layout.addWidget(self.label)
+                self.main_layout.addWidget(self.text_input)
+            
+            def _set_design(self):
+                self.main_layout = QVBoxLayout()
+                self.main_layout.setSpacing(0)
+                self.main_layout.setContentsMargins(0, 0, 0, 0)
                 
-                return super()._set_design()
+                self.setLayout(self.main_layout)
+            
+            class TextInput(QLineEdit):
+                def __init__(self, parent: QWidget):
+                    super().__init__(parent)
+                    self._set_design()
+            
+                def _set_design(self):
+                    self.setStyleSheet("border-radius: 5px;")
+                    
+                    self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+                    self.setFixedHeight(40)
+                    
+                    font = self.font()
+                    font.setPointSize(10)
+                    
+                    self.setFont(font)
         
+            class TextInputLabel(QLabel):
+                def __init__(self, parent: QWidget, title: str):
+                    super().__init__(parent, text = title)
+                    self.setStyleSheet("background-color: transparent;")
+                    
+                    font = self.font()
+                    font.setBold(True)
+                    
+                    self.setFont(font)
+        
+        class UsernameInput(InputArea):
+            def __init__(self, parent: QWidget):
+                super().__init__(parent, "USERNAME")
+                
+        class PasswordInput(InputArea):
+            def __init__(self, parent: QWidget):
+                super().__init__(parent, "PASSWORD")
+                self.text_input.setEchoMode(QLineEdit.EchoMode.Password)
+
         class Buttons(QWidget):
             def __init__(self, parent: QWidget):
                 super().__init__(parent)
@@ -285,7 +313,7 @@ class Login(QWidget):
                 self._set_widgets()
             
             def _set_design(self):
-                self.main_layout = QHBoxLayout()
+                self.main_layout = QVBoxLayout()
                 
                 self.setLayout(self.main_layout)
             
@@ -293,10 +321,10 @@ class Login(QWidget):
                 self.login = self.LoginButton(self.parentWidget())
                 self.register = self.RegisterButton(self.parentWidget())
                 
-                self.main_layout.addWidget(self.login)
-                self.main_layout.addWidget(self.register)
-            
-            class Button(QPushButton):
+                self.main_layout.addWidget(self.login, alignment = Qt.AlignmentFlag.AlignCenter)
+                self.main_layout.addWidget(self.register, alignment = Qt.AlignmentFlag.AlignLeft)
+                
+            class LoginButton(QPushButton):
                 def __init__(self, parent: QWidget):
                     super().__init__(parent)
                     
@@ -304,40 +332,61 @@ class Login(QWidget):
                     self._set_connections()
                 
                 def _set_design(self):
+                    self.setFixedHeight(50)
+                    self.setFixedWidth(150)
+                    
+                    self.setStyleSheet(
+                        "border-radius: 8px;"
+                    )
+                    
                     font = self.font()
                     font.setPointSize(13)
                     font.setBold(True)
                     
                     self.setFont(font)
+                    
+                    self.setText("Log In")
+                
+                def _set_connections(self):
+                    self.clicked.connect(self._on_click)
+                    self.pressed.connect(self._on_press)
+                    self.released.connect(self._on_release)
+                
+                def _on_press(self):
+                    pass
+                
+                def _on_release(self):
+                    pass
+                
+                def _on_click(self):
+                    print("Button clicked!")
+            
+            class RegisterButton(QPushButton):
+                def __init__(self, parent: QWidget):
+                    super().__init__(parent)
+                    
+                    self._set_design()
+                    self._set_connections()
+                
+                def _set_design(self):
+                    self.setFixedWidth(100)
+                    
+                    font = self.font()
+                    font.setPointSize(10)
+                    font.setBold(True)
+                    
+                    self.setFont(font)
+                    
+                    self.setText("Register")
+                    self.setStyleSheet(
+                        "background-color: transparent;"
+                        "border: none;"
+                        "color: rgb(128, 0, 32);"
+                        "text-align: left;"
+                    )
                 
                 def _set_connections(self):
                     self.clicked.connect(self._on_click)
                 
                 def _on_click(self):
                     print("Button clicked!")
-                
-            class LoginButton(Button):
-                def __init__(self, parent: QWidget):
-                    super().__init__(parent)
-                    self.setText("Login")
-                
-                def _set_connections(self): # Connections hook from QPushButton.
-                    self.clicked.connect(self._login_clicked)
-                    
-                    return super()._set_connections()
-            
-                def _login_clicked(self):
-                    print("Login clicked!")
-            
-            class RegisterButton(Button):
-                def __init__(self, parent: QWidget):
-                    super().__init__(parent)
-                    self.setText("Register")
-                
-                def _set_connections(self):
-                    self.clicked.connect(self._register_clicked)
-                    
-                    return super()._set_connections()
-                
-                def _register_clicked(self):
-                    print("Register clicked!")

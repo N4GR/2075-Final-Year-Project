@@ -17,6 +17,7 @@ class MainWindow(QWidget):
     def _set_design(self):
         """A function to add design to a Qt widget."""
         self.setGeometry(0, 0, 800, 600)
+        self.setMinimumSize(400, 400)
         self.setStyleSheet(f"background-color: {self.config.background_colour}")
     
     def _init_widgets(self):

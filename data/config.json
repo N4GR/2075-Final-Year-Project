@@ -12,7 +12,7 @@
             "IconColour": "rgb(154, 0, 38)"
         },
         "Menu": {
-            "BackgroundColour": "rgb(128, 0, 32)",
+            "BackgroundColour": "rgb(23, 23, 23)",
             "LoginButton": {
                 "src": "resources/assets/icons/buttons/hide_up.svg",
                 "IconColour": "rgb(128, 0, 32)"
