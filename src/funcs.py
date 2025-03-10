@@ -2,7 +2,7 @@
 import os
 import sys
 
-from PySide6.QtGui import QColor, QPainter, QPixmap
+from PySide6.QtGui import QColor, QPainter, QPixmap, QFontDatabase, QFont
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtSvg import QSvgRenderer
 
@@ -57,3 +57,17 @@ def change_svg_colour(
     painter.end()
 
     return pixmap
+
+def get_font(
+        family: str = "outfit",
+        weight: str = "regular"
+) -> QFont:
+    if family == "outfit":
+        src = f"resources/assets/fonts/Outfit-{weight.capitalize()}.ttf"
+    
+    font_id = QFontDatabase.addApplicationFont(src)
+    font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
+    
+    font = QFont(font_family)
+    
+    return font
