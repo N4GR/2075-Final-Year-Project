@@ -37,7 +37,9 @@ class Login(QWidget):
         self.menu = self.Menu(
             parent = self,
             config = self.config.menu
-        )    
+        )
+        
+        self.title = self.Title(self)
 
     def resizeEvent(self, event: QResizeEvent):
         # Resize the background to fill the size of the login screen.
@@ -55,10 +57,74 @@ class Login(QWidget):
             - int(self.menu.width() / 2),
             int(self.height() / 2)
             - int(self.menu.height() / 2)
-        ) # Move menu to always centre.
+            - 50
+        ) # Move menu to always centre with a -50 offset to the Y coordinate.
+        
+        # Move the title so it's stuck to the bottom.
+        self.title.move(
+            10,
+            self.height() - (self.title.height() + 10)
+        )
         
         return super().resizeEvent(event)
+    
+    class Title(QWidget):
+        def __init__(self, parent: QWidget):
+            super().__init__(parent)
+            self._set_design()
+            self._set_widgets()
+        
+        def _set_design(self):
+            self.setFixedSize(275, 64)
             
+            self.main_layout = QHBoxLayout()
+            self.main_layout.setSpacing(0)
+            self.main_layout.setContentsMargins(0, 0, 0, 0)
+            
+            self.setLayout(self.main_layout)
+        
+        def _set_widgets(self):
+            self.icon = self.Icon(self)
+            self.title = self.Title(self)
+            
+            self.main_layout.addWidget(self.icon)
+            self.main_layout.addWidget(self.title)
+        
+        class Icon(QLabel):
+            def __init__(self, parent: QWidget):
+                super().__init__(parent)
+                self._set_design()
+            
+            def _set_design(self):
+                self.setFixedSize(64, 64)
+                
+                pixmap = QPixmap(
+                    path("resources/assets/icons/icon.png")
+                ).scaled(
+                    self.size(),
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.FastTransformation
+                )
+                self.setPixmap(pixmap)
+        
+        class Title(QLabel):
+            def __init__(self, parent: QWidget):
+                super().__init__(parent)
+                self._set_design()
+            
+            def _set_design(self):
+                self.setText("METAPHRAST")
+                
+                self.setFont(self.get_font())
+            
+            def get_font(self) -> QFont:
+                font_id = QFontDatabase.addApplicationFont(path("resources/assets/fonts/Outfit-Bold.ttf"))
+                font_families = QFontDatabase.applicationFontFamilies(font_id)
+                
+                font = QFont(font_families[0], 24)
+                
+                return font
+       
     class Background(QLabel):
         def __init__(
                 self,
@@ -79,12 +145,30 @@ class Login(QWidget):
         ):
             super().__init__(parent)
             self.config = config
+            
+            self.dot_size = 50
+            self.dot_offset = 10
+            self.extra_items = 3
+            
             self._set_design()
             
-            self.dot_size = 20
             self.dot_pixmap = self._get_dot_pixmap()
-            self.required_columns = int(self.height() / self.dot_size)
-            self.required_rows = int(self.width() / self.dot_size)
+            
+            self.required_columns = int(
+                self.height()
+                / (
+                    self.dot_size
+                    - self.dot_offset
+                )
+            ) + self.extra_items
+            
+            self.required_rows = int(
+                self.width()
+                / (
+                    self.dot_size
+                    - self.dot_offset
+                )
+            ) + self.extra_items
             
             self.setPixmap(self._get_pixmap())
         
@@ -117,7 +201,13 @@ class Login(QWidget):
 
             for row in range(self.required_rows):
                 for column in range(self.required_columns):
-                    position = QPoint(self.dot_size * row, self.dot_size * column)
+                    position = QPoint(
+                        (self.dot_size - self.dot_offset)
+                        * row,
+                        (self.dot_size - self.dot_offset)
+                        * column
+                    )
+                    
                     painter.drawPixmap(position, self.dot_pixmap)
             
             painter.end()
@@ -125,14 +215,26 @@ class Login(QWidget):
             return pixmap
         
         def resizeEvent(self, event: QResizeEvent):
-            new_required_columns = int(self.height() / self.dot_size)
-            new_required_rows = int(self.width() / self.dot_size)
+            self.setFixedHeight(int(self.parentWidget().height() / 2))
+            self.setFixedWidth(int(self.parentWidget().width() / 2))
             
-            if new_required_columns != self.required_columns or new_required_rows != self.required_rows:
-                self.required_columns = new_required_columns
-                self.required_rows = new_required_rows
-                
-                self.setPixmap(self._get_pixmap())
+            self.required_columns = int(
+                self.height()
+                / (
+                    self.dot_size
+                    - self.dot_offset
+                )
+            ) + self.extra_items
+            
+            self.required_rows = int(
+                self.width()
+                / (
+                    self.dot_size
+                    - self.dot_offset
+                )
+            ) + self.extra_items
+            
+            self.setPixmap(self._get_pixmap())
             
             return super().resizeEvent(event)
         
@@ -179,7 +281,11 @@ class Login(QWidget):
             painter.setPen(colour) # Create the lines.
             painter.setBrush(colour) # Fill the triangle.
             
-            draw_points = [top_left, top_right, right_middle, bottom_middle, bottom_left] # Points to draw in order.
+            draw_points = [
+                top_left, top_right,
+                right_middle, bottom_middle,
+                bottom_left
+            ] # Points to draw in order.
             
             painter.drawPolygon(draw_points) # Draw the shape.
             
@@ -230,7 +336,6 @@ class Login(QWidget):
             
             self.main_layout.addWidget(self.username)
             self.main_layout.addWidget(self.password)
-            #self.main_layout.addStretch()
             self.main_layout.addWidget(self.buttons)
         
         def resizeEvent(self, event: QResizeEvent):
@@ -359,7 +464,15 @@ class Login(QWidget):
                     pass
                 
                 def _on_click(self):
-                    print("Button clicked!")
+                    print("Profile clicked!")
+                    self.login_widget = self.parentWidget().parentWidget().parentWidget()
+                    self.main_menu = self.login_widget.parentWidget()
+                    
+                    # Show the topbar.
+                    self.main_menu.top_bar.show()
+            
+                    # Delete the login menu widget.
+                    self.login_widget.deleteLater()
             
             class RegisterButton(QPushButton):
                 def __init__(self, parent: QWidget):

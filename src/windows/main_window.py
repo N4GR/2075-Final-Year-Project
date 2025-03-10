@@ -5,9 +5,14 @@ from src.windows.widgets.top_bar import TopBar
 from src.windows.widgets.login import Login
 
 class MainWindow(QWidget):
-    def __init__(self, application: QApplication):
+    def __init__(
+            self,
+            application: QApplication,
+            network_manager: NetworkManager
+    ):
         super().__init__()
         self.application = application
+        self.network_manager = network_manager
         self.config = MainWindowConfig()
         
         self._set_design()
@@ -19,6 +24,9 @@ class MainWindow(QWidget):
         self.setGeometry(0, 0, 800, 600)
         self.setMinimumSize(400, 400)
         self.setStyleSheet(f"background-color: {self.config.background_colour}")
+        
+        self.setWindowIcon(QPixmap(path("resources/assets/icons/icon.png")))
+        self.setWindowTitle("Metaphrast")
     
     def _init_widgets(self):
         self.login = Login(
@@ -41,6 +49,10 @@ class MainWindow(QWidget):
     
     def resizeEvent(self, event):
         self.top_bar.setFixedWidth(self.width()) # Top_Bar widget to fill main_window width.
-        self.login.setFixedSize(self.width(), self.height()) # Resize login screen to fill main_window area.
+        
+        try:
+            self.login.setFixedSize(self.width(), self.height()) # Resize login screen to fill main_window area.
+        except RuntimeError:
+            pass # If the login screen is deleted, ignore Runtime errors.
         
         return super().resizeEvent(event)

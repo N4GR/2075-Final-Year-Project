@@ -3,23 +3,23 @@
         "BackgroundColour": "rgb(31, 31, 31)"
     },
     "Login": {
-        "BackgroundColour": "rgb(128, 0, 32)",
+        "BackgroundColour": "rgb(191, 0, 48)",
         "Triangle": {
             "BackgroundColour": "rgb(31, 31, 31)"
         },
         "Texture": {
             "src": "resources/assets/icons/dot.svg",
-            "IconColour": "rgb(154, 0, 38)"
+            "IconColour": "rgb(31, 31, 31)"
         },
         "Menu": {
             "BackgroundColour": "rgb(23, 23, 23)",
             "LoginButton": {
                 "src": "resources/assets/icons/buttons/hide_up.svg",
-                "IconColour": "rgb(128, 0, 32)"
+                "IconColour": "rgb(191, 0, 48)"
             },
             "RegisterButton": {
                 "src": "resources/assets/icons/buttons/hide_up.svg",
-                "IconColour": "rgb(128, 0, 32)"
+                "IconColour": "rgb(191, 0, 48)"
             }
         }
     },
@@ -27,11 +27,11 @@
         "BackgroundColour": "rgb(24, 24, 24)",
         "HideButton": {
             "src": "resources/assets/icons/buttons/hide_up.svg",
-            "IconColour": "rgb(128, 0, 32)"
+            "IconColour": "rgb(191, 0, 48)"
         },
         "ProfileButton": {
             "src": "resources/assets/icons/buttons/profile_up.svg",
-            "IconColour": "rgb(128, 0, 32)"
+            "IconColour": "rgb(191, 0, 48)"
         }
     }
 }

@@ -2,6 +2,8 @@
 import random
 
 # Third-party imports.
+import requests
+
 from PySide6.QtWidgets import (
     QWidget, QApplication, QLabel, QSizePolicy,
     QHBoxLayout, QVBoxLayout, QStackedLayout,
@@ -11,12 +13,19 @@ from PySide6.QtWidgets import (
 
 from PySide6.QtCore import (
     Qt, QSize, QPropertyAnimation, QEasingCurve,
-    QPoint, QParallelAnimationGroup
+    QPoint, QParallelAnimationGroup, QObject,
+    QUrl, QJsonDocument, Slot, Signal
+)
+
+from PySide6.QtNetwork import (
+    QNetworkAccessManager, QNetworkRequest,
+    QNetworkReply
 )
 
 from PySide6.QtGui import (
     QIcon, QColor, QPainter, QPixmap,
-    QResizeEvent, QTransform
+    QResizeEvent, QTransform, QFont,
+    QFontDatabase
 )
 
 from PySide6.QtSvg import (
