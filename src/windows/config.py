@@ -32,6 +32,7 @@ class LoginConfig:
         self.background_colour : str = data["BackgroundColour"]
         self.triangle = self.Triangle(data["Triangle"])
         self.texture = self.Texture(data["Texture"])
+        self.menu = self.Menu(data["Menu"])
     
     class Texture:
         def __init__(self, texture_data: dict):
@@ -42,7 +43,14 @@ class LoginConfig:
         def __init__(self, triangle_data: dict):
             self.background_colour : str = triangle_data["BackgroundColour"]
     
-    class Button:
-        def __init__(self, button_data: dict):
-            self.icon_src : str = path(button_data["src"])
-            self.icon_colour : str = button_data["IconColour"]
+    class Menu:
+        def __init__(self, menu_data: dict):
+            self.background_colour : str = menu_data["BackgroundColour"]
+            
+            self.login = self.Button(menu_data["LoginButton"])
+            self.register = self.Button(menu_data["RegisterButton"])
+        
+        class Button:
+            def __init__(self, button_data: dict):
+                self.icon_src : str = path(button_data["src"])
+                self.icon_colour : str = button_data["IconColour"]

@@ -1,10 +1,12 @@
 # Python imports.
+import random
 
 # Third-party imports.
 from PySide6.QtWidgets import (
     QWidget, QApplication, QLabel, QSizePolicy,
     QHBoxLayout, QVBoxLayout, QStackedLayout,
-    QPushButton, QSpacerItem, QMainWindow
+    QPushButton, QSpacerItem, QMainWindow, QGridLayout,
+    QLineEdit
 )
 
 from PySide6.QtCore import (

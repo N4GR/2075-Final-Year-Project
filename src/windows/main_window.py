@@ -31,7 +31,7 @@ class MainWindow(QWidget):
         )
         
         # Hide the topbar only until login is complete.
-        #self.top_bar.hide()
+        self.top_bar.hide()
     
     def _init_layout(self):
         self.main_layout = QVBoxLayout()

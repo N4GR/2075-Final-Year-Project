@@ -24,20 +24,35 @@ class Login(QWidget):
             config = self.config
         )
         
-        self.triangle = self.Triangle(
-            parent = self,
-            config = self.config.triangle
-        )
-        
         self.texture = self.Texture(
             parent = self,
             config = self.config.texture
         )
+        
+        self.triangle = self.Triangle(
+            parent = self,
+            config = self.config.triangle
+        )
     
+        self.menu = self.Menu(
+            parent = self,
+            config = self.config.menu
+        )    
+
     def resizeEvent(self, event: QResizeEvent):
         # Resize the background to fill the size of the login screen.
         self.background.setFixedSize(self.size())
         self.triangle.setFixedSize(self.size())
+        
+        half_x = int(self.width() / 2)
+        half_y = int(self.height() / 2)
+        
+        self.texture.move(half_x, half_y)
+        self.texture.setFixedSize(half_x, half_y)
+        
+        # Move the menu with an offset of the main X and Y.
+        self.menu.move(self.width() * 0.1, self.height() * 0.1) # 10% of height and width.
+        self.menu.setFixedSize(self.width() * 0.25, self.height() * 0.5) # 25% of width, 50% of height.
         
         return super().resizeEvent(event)
             
@@ -61,37 +76,63 @@ class Login(QWidget):
         ):
             super().__init__(parent)
             self.config = config
-            
             self._set_design()
+            
+            self.dot_size = 20
+            self.dot_pixmap = self._get_dot_pixmap()
+            self.required_columns = int(self.height() / self.dot_size)
+            self.required_rows = int(self.width() / self.dot_size)
+            
+            self.setPixmap(self._get_pixmap())
         
         def _set_design(self):
-            self.setFixedSize(self.parentWidget().size())
-            self.setPixmap(self.create_texture_pixmap(self.size()))
+            self.move(int(self.parentWidget().width() / 2), int(self.parentWidget().height() / 2))
+            self.setFixedHeight(int(self.parentWidget().height() / 2))
+            self.setFixedWidth(int(self.parentWidget().width() / 2))
             self.setStyleSheet("background-color: transparent;")
         
-        def create_texture_pixmap(self, size: QSize) -> QPixmap:
-            colour_values = self.config.icon_colour.replace("rgb(", "").replace(")", "").split(",")
-            red = int(colour_values[0])
-            green = int(colour_values[1])
-            blue = int(colour_values[2])
+        def _get_dot_pixmap(self) -> QPixmap:
+            colour_data = self.config.icon_colour.replace("rgb(", "").replace(")", "").split(",")
+            red = int(colour_data[0])
+            green = int(colour_data[1])
+            blue = int(colour_data[2])
+
+            dot_pixmap = change_svg_colour(
+                src = path(self.config.icon_src),
+                size = (self.dot_size, self.dot_size),
+                colour = (red, green, blue)
+            )
             
-            pixmap = QPixmap(size)
+            return dot_pixmap
+        
+        def _get_pixmap(self) -> QPixmap:
+            pixmap = QPixmap(self.size())
             pixmap.fill(Qt.GlobalColor.transparent)
             
-            up_icon = change_svg_colour(self.config.icon_src, (64, 64), (red, green, blue))
-            down_icon = up_icon.copy().transformed(QTransform().rotate(180), Qt.TransformationMode.SmoothTransformation)
-    
-            # Painter object to paint the texture onto the pixmap.
+            # Create the painter object to paint to the new pixmap.
             painter = QPainter(pixmap)
 
-            painter.drawPixmap(QPoint(100, 100), up_icon)
-            painter.drawPixmap(QPoint(82, 82), down_icon)
-            painter.drawPixmap(QPoint(64, 100), up_icon)
+            for row in range(self.required_rows):
+                for column in range(self.required_columns):
+                    position = QPoint(self.dot_size * row, self.dot_size * column)
+                    painter.drawPixmap(position, self.dot_pixmap)
             
             painter.end()
             
             return pixmap
+        
+        def resizeEvent(self, event: QResizeEvent):
+            new_required_columns = int(self.height() / self.dot_size)
+            new_required_rows = int(self.width() / self.dot_size)
             
+            if new_required_columns != self.required_columns or new_required_rows != self.required_rows:
+                self.required_columns = new_required_columns
+                self.required_rows = new_required_rows
+                
+                self.setPixmap(self._get_pixmap())
+            
+            return super().resizeEvent(event)
+        
     class Triangle(QLabel):
         def __init__(
                 self,
@@ -148,3 +189,155 @@ class Login(QWidget):
             self.setPixmap(pixmap)
             
             return super().resizeEvent(event)
+    
+    class Menu(QWidget):
+        def __init__(
+                self,
+                parent: QWidget,
+                config: LoginConfig.Menu
+        ):
+            super().__init__(parent)
+            self.config = config
+
+            self._set_design()
+            self._set_widgets()
+        
+        def _set_design(self):
+            self.setFixedWidth(200)
+            self.setFixedHeight(300)
+        
+            self.main_layout = QVBoxLayout()
+            self.main_layout.setSpacing(10)
+            self.main_layout.setContentsMargins(5, 50, 5, 50)
+            
+            self.setLayout(self.main_layout)
+        
+        def _set_widgets(self):
+            self.background = self.Background(
+                parent = self,
+                config = self.config
+            )
+            
+            self.username = self.UsernameInput(self)
+            self.password = self.PasswordInput(self)
+            
+            self.buttons = self.Buttons(self)
+            
+            self.main_layout.addWidget(self.username)
+            self.main_layout.addWidget(self.password)
+            self.main_layout.addStretch()
+            self.main_layout.addWidget(self.buttons)
+        
+        def resizeEvent(self, event: QResizeEvent):
+            self.background.setFixedSize(self.size()) # Background to always fill widget.
+            
+            return super().resizeEvent(event)
+
+        class Background(QLabel):
+            def __init__(
+                    self,
+                    parent: QWidget,
+                    config: LoginConfig
+            ):
+                super().__init__(parent)
+                self.config = config
+                
+                self.setFixedSize(self.parentWidget().size())
+                self.setStyleSheet(
+                    f"background-color: {self.config.background_colour};"
+                    "border-radius: 15px"
+                )
+        
+        class TextInput(QLineEdit):
+            def __init__(self, parent: QWidget, title: str):
+                super().__init__(parent, placeholderText = title)
+                self._set_design()
+        
+            def _set_design(self):
+                self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+                self.setFixedHeight(50)
+                
+                self.setStyleSheet("border: none;")
+                
+                font = self.font()
+                font.setPointSize(15)
+                font.setBold(True)
+                
+                self.setFont(font)
+        
+        class UsernameInput(TextInput):
+            def __init__(self, parent: QWidget):
+                super().__init__(parent, "Username")
+        
+        class PasswordInput(TextInput):
+            def __init__(self, parent: QWidget):
+                super().__init__(parent, "Password")
+            
+            def _set_design(self): # Design hook from TextInput.
+                self.setEchoMode(QLineEdit.EchoMode.Password)
+                
+                return super()._set_design()
+        
+        class Buttons(QWidget):
+            def __init__(self, parent: QWidget):
+                super().__init__(parent)
+                self._set_design()
+                self._set_widgets()
+            
+            def _set_design(self):
+                self.main_layout = QHBoxLayout()
+                
+                self.setLayout(self.main_layout)
+            
+            def _set_widgets(self):
+                self.login = self.LoginButton(self.parentWidget())
+                self.register = self.RegisterButton(self.parentWidget())
+                
+                self.main_layout.addWidget(self.login)
+                self.main_layout.addWidget(self.register)
+            
+            class Button(QPushButton):
+                def __init__(self, parent: QWidget):
+                    super().__init__(parent)
+                    
+                    self._set_design()
+                    self._set_connections()
+                
+                def _set_design(self):
+                    font = self.font()
+                    font.setPointSize(13)
+                    font.setBold(True)
+                    
+                    self.setFont(font)
+                
+                def _set_connections(self):
+                    self.clicked.connect(self._on_click)
+                
+                def _on_click(self):
+                    print("Button clicked!")
+                
+            class LoginButton(Button):
+                def __init__(self, parent: QWidget):
+                    super().__init__(parent)
+                    self.setText("Login")
+                
+                def _set_connections(self): # Connections hook from QPushButton.
+                    self.clicked.connect(self._login_clicked)
+                    
+                    return super()._set_connections()
+            
+                def _login_clicked(self):
+                    print("Login clicked!")
+            
+            class RegisterButton(Button):
+                def __init__(self, parent: QWidget):
+                    super().__init__(parent)
+                    self.setText("Register")
+                
+                def _set_connections(self):
+                    self.clicked.connect(self._register_clicked)
+                    
+                    return super()._set_connections()
+                
+                def _register_clicked(self):
+                    print("Register clicked!")
