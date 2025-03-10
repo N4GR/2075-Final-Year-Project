@@ -339,7 +339,10 @@ class Login(QWidget):
             self.main_layout.addWidget(self.buttons)
         
         def resizeEvent(self, event: QResizeEvent):
-            self.background.setFixedSize(self.size()) # Background to always fill widget.
+            self.background.setFixedSize(
+                self.width() - 10,
+                self.height() - 10
+            ) # Background to always fill widget.
             
             return super().resizeEvent(event)
 
@@ -352,11 +355,30 @@ class Login(QWidget):
                 super().__init__(parent)
                 self.config = config
                 
-                self.setFixedSize(self.parentWidget().size())
+                self.setFixedSize(
+                    self.parentWidget().width() - 10,
+                    self.parentWidget().height() - 10
+                )
+                
+                self.move(
+                    self.parentWidget().width() / 2 - self.width() / 2,
+                    self.parentWidget().height() / 2 - self.height() / 2
+                )
+                
                 self.setStyleSheet(
                     f"background-color: {self.config.background_colour};"
                     "border-radius: 15px"
                 )
+                
+                self.setGraphicsEffect(self.get_dropshadow())
+            
+            def get_dropshadow(self) -> QGraphicsDropShadowEffect:
+                shadow = QGraphicsDropShadowEffect(self)
+                shadow.setBlurRadius(10)
+                shadow.setOffset(0, 0)
+                shadow.setColor(QColor(0, 0, 0, 160))
+                
+                return shadow
         
         class InputArea(QWidget):
             def __init__(self, parent: QWidget, title: str):

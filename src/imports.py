@@ -8,13 +8,13 @@ from PySide6.QtWidgets import (
     QWidget, QApplication, QLabel, QSizePolicy,
     QHBoxLayout, QVBoxLayout, QStackedLayout,
     QPushButton, QSpacerItem, QMainWindow, QGridLayout,
-    QLineEdit
+    QLineEdit, QGraphicsDropShadowEffect, QComboBox
 )
 
 from PySide6.QtCore import (
     Qt, QSize, QPropertyAnimation, QEasingCurve,
     QPoint, QParallelAnimationGroup, QObject,
-    QUrl, QJsonDocument, Slot, Signal
+    QUrl, QJsonDocument, Slot, Signal, QEvent
 )
 
 from PySide6.QtNetwork import (
@@ -25,7 +25,7 @@ from PySide6.QtNetwork import (
 from PySide6.QtGui import (
     QIcon, QColor, QPainter, QPixmap,
     QResizeEvent, QTransform, QFont,
-    QFontDatabase
+    QFontDatabase, QCursor, QMouseEvent
 )
 
 from PySide6.QtSvg import (
