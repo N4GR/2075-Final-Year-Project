@@ -1,4 +1,4 @@
-from src.imports import *
+import requests
 
 class NetworkManager:
     def __init__(self):
@@ -21,7 +21,44 @@ class NetworkManager:
             
             return response.json()
     
-    def get_chat_data(self, chat_id: int) -> dict:
+    def get_chat_data(self) -> dict:
+        # EXAMPLE FUNCTION.
+        return {
+            "Members": [
+                {
+                    "username": "Karl",
+                    "id": 1
+                },
+                {
+                    "username": "Kenny",
+                    "id": 2
+                },
+                {
+                    "username": "Kerry",
+                    "id": 3
+                }
+            ],
+            "Messages": [
+                {
+                    "text": "Hello Kenny!",
+                    "author_id": 1
+                },
+                {
+                    "text": "Hey Kenny, how are you?",
+                    "author_id": 2
+                },
+                {
+                    "text": "Sup guys, did you see the game last night?",
+                    "author_id": 3
+                },
+                {
+                    "text": "Yeahhhh, it was crazy dude! Also, doing pretty good Ken, hbu?",
+                    "author_id": 1
+                }
+            ]
+        }
+    
+    def ___get_chat_data(self, chat_id: int) -> dict:
         endpoint = f"/api/chat/get/{chat_id}"
 
         url = self.api_url + endpoint
