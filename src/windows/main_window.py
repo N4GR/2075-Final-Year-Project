@@ -56,3 +56,15 @@ class MainWindow(QWidget):
             pass # If the login screen is deleted, ignore Runtime errors.
         
         return super().resizeEvent(event)
+    
+    def mousePressEvent(self, event: QMouseEvent):
+        try:
+            drop_menu = self.top_bar.buttons.profile_button.drop_menu
+            
+            if not drop_menu.geometry().contains(event.pos()): # User clicked outside drop menu.
+                drop_menu.deleteLater() # Delete the drop menu.
+        
+        except AttributeError:
+            pass # If the variables don't exist, pass the error and ignore it.
+        
+        return super().mousePressEvent(event)

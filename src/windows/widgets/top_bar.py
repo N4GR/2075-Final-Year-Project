@@ -98,11 +98,15 @@ class TopBar(QWidget):
             self.setLayout(self.main_layout)
         
         def _set_widgets(self):
-            self.profile_button = ProfileButton(self, self.config.profile_button)
+            self.profile_button = ProfileButton(self, self.config.profile_button, self.main_window)
             self.right_layout.addWidget(self.profile_button)
 
 class TopBarButton(QPushButton):
-    def __init__(self, parent: QWidget, config: TopBarConfig.Button):
+    def __init__(
+            self,
+            parent: QWidget,
+            config: TopBarConfig.Button
+    ):
         super().__init__(parent)
         self.config = config
         
@@ -168,7 +172,11 @@ class TopBarButton(QPushButton):
         self.setIconSize(QSize(self.original_width, self.original_height))
         
 class HideButton(TopBarButton):
-    def __init__(self, parent: QWidget, config: TopBarConfig.Button):
+    def __init__(
+            self,
+            parent: QWidget,
+            config: TopBarConfig.Button
+    ):
         super().__init__(parent, config)
         self._is_hidden = False
         
@@ -239,9 +247,87 @@ class HideButton(TopBarButton):
         animation_group.start() # Start the group.
                 
 class ProfileButton(TopBarButton):
-    def __init__(self, parent: QWidget, config: TopBarConfig.Button):
+    def __init__(
+            self,
+            parent: QWidget,
+            config: TopBarConfig.Button,
+            main_window: QWidget
+    ):
         super().__init__(parent, config)
+        self.main_window = main_window
+        
+        #self.drop_menu = self.DropDownMenu(self.main_window, self.main_window)
+        
         self.clicked.connect(self._on_click)
     
     def _on_click(self):
         print("Clicking profile...")
+        self.drop_menu = self.DropDownMenu(self.main_window, self.main_window)
+        self.drop_menu.show()
+        #self.drop_menu = self.DropDownMenu(self.main_window, self.main_window)
+    
+    class DropDownMenu(QWidget):
+        def __init__(
+                self,
+                parent: QWidget,
+                main_window: QWidget
+        ):
+            super().__init__(parent)
+            self.main_window = main_window
+            
+            self._set_design()
+            self._set_widgets()
+        
+        def _set_design(self):
+            self.setFixedSize(150, 75)
+            
+            # Create a layout for the drop menu.
+            self.main_layout = QVBoxLayout()
+            self.main_layout.setSpacing(0)
+            self.main_layout.setContentsMargins(0, 0, 0 ,0)
+            self.setLayout(self.main_layout)
+            
+            # Move the menu relative to the cursor clicked position.
+            global_position = QCursor.pos() # QPoint position of the cursor.
+            relative_position = self.main_window.mapFromGlobal(global_position) # Cursor QPoint relative to main window.
+            
+            self.move(
+                relative_position.x() - self.width(),
+                relative_position.y()
+            ) # Move to cursor position.
+        
+        def _set_widgets(self):
+            self.background = self.Background(self)
+            self.username = self.Username(self)
+            
+            self.main_layout.addWidget(self.username, alignment = Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        
+        class Background(QLabel):
+            def __init__(self, parent: QWidget):
+                super().__init__(parent)
+                self.setFixedSize(self.parentWidget().size()) # Set size to fill drop menu.
+                self.setStyleSheet("background-color: white;")
+        
+        class Username(QLabel):
+            def __init__(self, parent: QWidget):
+                super().__init__(parent)
+                self.setText("Karl")
+                self.setStyleSheet("background-color: transparent; color: black;")
+                
+                self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+                self.setFixedHeight(self.sizeHint().height())
+                
+                self.setFont(self.get_font())
+            
+            def get_font(self) -> QFont:
+                font_id = QFontDatabase.addApplicationFont(path("resources/assets/fonts/Outfit-Bold.ttf"))
+                font_families = QFontDatabase.applicationFontFamilies(font_id)
+                
+                font = QFont(font_families[0], 10)
+                
+                return font
+
+        class Settings(QPushButton):
+            def __init__(self, parent: QWidget):
+                super().__init__(parent)
+                self.setText("Settings")
