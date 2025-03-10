@@ -35,3 +35,4 @@ from PySide6.QtSvg import (
 # Local imports.
 from src.funcs import *
 from src.windows.config import *
+from src.network.manager import NetworkManager
