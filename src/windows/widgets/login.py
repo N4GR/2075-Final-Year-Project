@@ -14,9 +14,15 @@ class Login(QWidget):
     
         self._set_design()
         self._set_widgets()
+        
+        self.fade_in()
     
     def _set_design(self):
         self.setFixedSize(self.parentWidget().size())
+        
+        # To control opacity of the widget.
+        self.opacity_effect = QGraphicsOpacityEffect(opacity = 0.0)
+        self.setGraphicsEffect(self.opacity_effect) # Add the efect to the login widget.
     
     def _set_widgets(self):
         self.background = self.Background(
@@ -68,13 +74,30 @@ class Login(QWidget):
         
         return super().resizeEvent(event)
     
-    def deleteLater(self):
-        def fade_animation():
-            pass
+    def fade_out(self):
+        """A function that will create a fade out effect on the window, then delete it once complete."""
+        def on_animation_complete():
+            self.deleteLater()
+
+        # Animation for the fading.
+        self.animation = QPropertyAnimation(self.opacity_effect, b"opacity")
+        self.animation.setDuration(100) # 0.1 Seconds
+        self.animation.setStartValue(self.opacity_effect.opacity())
+        self.animation.setEndValue(0.0)
         
-        print("closing!")
+        self.animation.finished.connect(on_animation_complete)
         
-        return super().deleteLater()
+        self.animation.start()
+    
+    def fade_in(self):
+        """A function that will use the opacity effect to fade in the login screen."""
+        # Animation for the fading.
+        self.animation = QPropertyAnimation(self.opacity_effect, b"opacity")
+        self.animation.setDuration(1000) # 0.1 Seconds
+        self.animation.setStartValue(self.opacity_effect.opacity())
+        self.animation.setEndValue(0.99)
+        
+        self.animation.start()
     
     class Title(QWidget):
         def __init__(self, parent: QWidget):
@@ -342,8 +365,6 @@ class Login(QWidget):
             self.main_layout.addWidget(self.buttons)
         
         def resizeEvent(self, event: QResizeEvent):
-            print(self.size())
-            
             self.background.setFixedSize(
                 self.width() - 10,
                 self.height() - 10
@@ -490,7 +511,6 @@ class Login(QWidget):
                     pass
                 
                 def _on_click(self):
-                    print("Profile clicked!")
                     self.login_widget = self.parentWidget().parentWidget().parentWidget()
                     self.main_menu = self.login_widget.parentWidget()
                     
@@ -498,7 +518,7 @@ class Login(QWidget):
                     self.main_menu.top_bar.show()
             
                     # Delete the login menu widget.
-                    self.login_widget.deleteLater()
+                    self.login_widget.fade_out()
             
             class RegisterButton(QPushButton):
                 def __init__(self, parent: QWidget):
@@ -527,4 +547,4 @@ class Login(QWidget):
                     self.clicked.connect(self._on_click)
                 
                 def _on_click(self):
-                    print("Button clicked!")
+                    pass

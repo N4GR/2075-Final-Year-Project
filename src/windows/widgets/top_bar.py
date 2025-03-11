@@ -225,16 +225,12 @@ class HideButton(TopBarButton):
         
         # Set the anim type and the icon to match the type.
         if self._is_hidden is False:
-            print("Hiding topbar")
-            
             self.change_icon("resources/assets/icons/buttons/show_up.svg")
             self._is_hidden = True
             
             anim_type = "hide"
         
         else:
-            print("Showing topbar")
-            
             self.change_icon("resources/assets/icons/buttons/hide_up.svg")
             self._is_hidden = False
             
@@ -262,7 +258,6 @@ class ProfileButton(TopBarButton):
         self.clicked.connect(self._on_click)
     
     def _on_click(self):
-        print("Clicking profile...")
         if self._is_showing is True:
             self.drop_menu.deleteLater()
             self._is_showing = False
