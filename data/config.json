@@ -4,6 +4,7 @@
     },
     "Login": {
         "BackgroundColour": "rgb(191, 0, 48)",
+        "TextColour": "rgb(255, 255, 255)",
         "Triangle": {
             "BackgroundColour": "rgb(31, 31, 31)"
         },
@@ -13,6 +14,7 @@
         },
         "Menu": {
             "BackgroundColour": "rgb(23, 23, 23)",
+            "TextColour": "rgb(255, 255, 255)",
             "LoginButton": {
                 "src": "resources/assets/icons/buttons/hide_up.svg",
                 "IconColour": "rgb(191, 0, 48)"

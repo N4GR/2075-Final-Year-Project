@@ -45,7 +45,10 @@ class Login(QWidget):
             config = self.config.menu
         )
         
-        self.title = self.Title(self)
+        self.title = self.Title(
+            parent = self,
+            config = self.config
+        )
 
     def resizeEvent(self, event: QResizeEvent):
         # Resize the background to fill the size of the login screen.
@@ -100,8 +103,14 @@ class Login(QWidget):
         self.animation.start()
     
     class Title(QWidget):
-        def __init__(self, parent: QWidget):
+        def __init__(
+                self,
+                parent: QWidget,
+                config: LoginConfig
+        ):
             super().__init__(parent)
+            self.config = config
+            
             self._set_design()
             self._set_widgets()
         
@@ -116,7 +125,7 @@ class Login(QWidget):
         
         def _set_widgets(self):
             self.icon = self.Icon(self)
-            self.title = self.Title(self)
+            self.title = self.Title(self, self.config)
             
             self.main_layout.addWidget(self.icon)
             self.main_layout.addWidget(self.title)
@@ -139,12 +148,22 @@ class Login(QWidget):
                 self.setPixmap(pixmap)
         
         class Title(QLabel):
-            def __init__(self, parent: QWidget):
+            def __init__(
+                    self,
+                    parent: QWidget,
+                    config: LoginConfig
+            ):
                 super().__init__(parent)
+                self.config = config
+                
                 self._set_design()
             
             def _set_design(self):
                 self.setText("METAPHRAST")
+                
+                self.setStyleSheet(
+                    f"color: {self.config.text_colour}"
+                )
                 
                 font = get_font(weight = "bold")
                 font.setPointSize(24)
@@ -355,10 +374,10 @@ class Login(QWidget):
                 config = self.config
             )
             
-            self.username = self.UsernameInput(self)
-            self.password = self.PasswordInput(self)
+            self.username = self.UsernameInput(self, self.config)
+            self.password = self.PasswordInput(self, self.config)
             
-            self.buttons = self.Buttons(self)
+            self.buttons = self.Buttons(self, self.config)
             
             self.main_layout.addWidget(self.username)
             self.main_layout.addWidget(self.password)
@@ -407,12 +426,19 @@ class Login(QWidget):
                 return shadow
         
         class InputArea(QWidget):
-            def __init__(self, parent: QWidget, title: str):
+            def __init__(
+                    self,
+                    parent: QWidget,
+                    title: str,
+                    config: LoginConfig.Menu
+            ):
                 super().__init__(parent)
                 self._set_design()
                 
-                self.text_input = self.TextInput(parent)
-                self.label = self.TextInputLabel(parent, title)
+                self.config = config
+                
+                self.text_input = self.TextInput(parent, self.config)
+                self.label = self.TextInputLabel(parent, title, self.config)
             
                 self.main_layout.addWidget(self.label)
                 self.main_layout.addWidget(self.text_input)
@@ -425,12 +451,21 @@ class Login(QWidget):
                 self.setLayout(self.main_layout)
             
             class TextInput(QLineEdit):
-                def __init__(self, parent: QWidget):
+                def __init__(
+                        self,
+                        parent: QWidget,
+                        config: LoginConfig.Menu
+                ):
                     super().__init__(parent)
+                    self.config = config
+                    
                     self._set_design()
             
                 def _set_design(self):
-                    self.setStyleSheet("border-radius: 5px;")
+                    self.setStyleSheet(
+                        "border-radius: 5px;"
+                        f"color: {self.config.text_colour}"
+                    )
                     
                     self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
                     self.setFixedHeight(40)
@@ -441,9 +476,22 @@ class Login(QWidget):
                     self.setFont(font)
         
             class TextInputLabel(QLabel):
-                def __init__(self, parent: QWidget, title: str):
+                def __init__(
+                        self,
+                        parent: QWidget,
+                        title: str,
+                        config: LoginConfig.Menu
+                ):
                     super().__init__(parent, text = title)
-                    self.setStyleSheet("background-color: transparent;")
+                    self.config = config
+                    
+                    self._set_design()
+                    
+                def _set_design(self):
+                    self.setStyleSheet(
+                        "background-color: transparent;"
+                        f"color: {self.config.text_colour};"
+                    )
                     
                     font = get_font(weight = "bold")
                     font.setPointSize(12)
@@ -451,17 +499,31 @@ class Login(QWidget):
                     self.setFont(font)
         
         class UsernameInput(InputArea):
-            def __init__(self, parent: QWidget):
-                super().__init__(parent, "USERNAME")
+            def __init__(
+                    self,
+                    parent: QWidget,
+                    config: LoginConfig.Menu
+            ):
+                super().__init__(parent, "USERNAME", config)
                 
         class PasswordInput(InputArea):
-            def __init__(self, parent: QWidget):
-                super().__init__(parent, "PASSWORD")
+            def __init__(
+                    self,
+                    parent: QWidget,
+                    config: LoginConfig.Menu
+            ):
+                super().__init__(parent, "PASSWORD", config)
                 self.text_input.setEchoMode(QLineEdit.EchoMode.Password)
 
         class Buttons(QWidget):
-            def __init__(self, parent: QWidget):
+            def __init__(
+                    self,
+                    parent: QWidget,
+                    config: LoginConfig.Menu
+            ):
                 super().__init__(parent)
+                self.config = config
+                
                 self._set_design()
                 self._set_widgets()
             
@@ -471,15 +533,20 @@ class Login(QWidget):
                 self.setLayout(self.main_layout)
             
             def _set_widgets(self):
-                self.login = self.LoginButton(self.parentWidget())
+                self.login = self.LoginButton(self.parentWidget(), self.config)
                 self.register = self.RegisterButton(self.parentWidget())
                 
                 self.main_layout.addWidget(self.login, alignment = Qt.AlignmentFlag.AlignCenter)
                 self.main_layout.addWidget(self.register, alignment = Qt.AlignmentFlag.AlignLeft)
                 
             class LoginButton(QPushButton):
-                def __init__(self, parent: QWidget):
+                def __init__(
+                        self,
+                        parent: QWidget,
+                        config: LoginConfig.Menu
+                ):
                     super().__init__(parent)
+                    self.config = config
                     
                     self._set_design()
                     self._set_connections()
@@ -490,6 +557,7 @@ class Login(QWidget):
                     
                     self.setStyleSheet(
                         "border-radius: 8px;"
+                        f"color: {self.config.text_colour}"
                     )
                     
                     font = get_font(weight = "Bold")
