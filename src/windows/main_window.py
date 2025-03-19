@@ -1,100 +1,55 @@
-from src.imports import *
+from src.shared.imports import *
 
-# Widget imports.
-from src.windows.widgets.top_bar import TopBar
-from src.windows.widgets.login import Login
+# Local imports.
+from src.windows.widgets.login_window import LoginWindow
 
-class MainWindow(QWidget):
-    def __init__(
-            self,
-            application: QApplication,
-            network_manager: NetworkManager
-    ):
+class MainWindow(QMainWindow):
+    def __init__(self):
+        """A class object that's a subclass of QMainWindow to function as the main window object."""
         super().__init__()
-        self.application = application
-        self.network_manager = network_manager
-        self.config = MainWindowConfig()
+        self._add_design()
+        self._add_widgets()
+        self._add_layout()
         
-        self.old_width = 800
-        
-        self._set_design()
-        self._init_widgets()
-        self._init_layout()
+        self.showMaximized() # Show the window after all elements have loaded.
     
-    def _set_design(self):
-        """A function to add design to a Qt widget."""
-        self.setGeometry(0, 0, 800, 600)
-        self.setMinimumSize(400, 400)
-        self.setStyleSheet(f"background-color: {self.config.background_colour}")
+    def _add_design(self):
+        """A function to add design elements to the widget."""
+        self.setMinimumSize(800, 600) # Set a minimum size for the window to be displayed as.
         
-        self.setWindowIcon(QPixmap(path("resources/assets/icons/icon.png")))
-        self.setWindowTitle("Metaphrast")
+        # FOR TESTING PURPOSES, MOVING THE WINDOW TO A DIFFERENT DISPLAY.
+        for screen in QApplication.screens():
+            if screen.name() == "Acer P226HQ":
+                self.setGeometry(screen.geometry())
     
-    def _init_widgets(self):
-        self.login = Login(
-            parent = self,
-            main_window = self
-        )
+    def _add_widgets(self):
+        """A function to add widgets related to the widget to the widget."""
+        self.background_label = self.BackgroundLabel(self)
         
-        self.top_bar = TopBar(
-            parent = self,
-            main_window = self
-        )
-        
-        # Hide the topbar only until login is complete.
-        self.top_bar.hide()
+        self.login_window = LoginWindow(self)
     
-    def _init_layout(self):
-        self.main_layout = QVBoxLayout()
-        self.main_layout.addSpacing(0)
-        self.main_layout.setContentsMargins(0, 0, 0, 0)
+    def _add_layout(self):
+        """A function to add the layout to the widget."""
+        pass
     
     def resizeEvent(self, event: QResizeEvent):
-        new_width = self.width()
-        width_different = new_width - self.old_width
-        
-        self.top_bar.setFixedWidth(self.width()) # Top_Bar widget to fill main_window width.
-        
-        try:
-            # Move the drop-down relative to the moved position, if it exists.
-            drop_menu = self.top_bar.buttons.profile_button.drop_menu
-            drop_menu.move(
-                drop_menu.pos().x() + width_different,
-                drop_menu.y()
-            )
+        """A function called when the window is resized.
 
-        except AttributeError:
-            pass
-        
-        except RuntimeError:
-            pass
-        
-        try:
-            self.login.setFixedSize(self.size()) # Login screen will always fill window.
-
-        except AttributeError:
-            pass # If the widget never existed, ignore error.
-        
-        except RuntimeError:
-            pass # If the widget was deleted, ignore error.
-        
-        self.old_width = new_width
+        Args:
+            event (QResizeEvent): QResizeEvent from PySide6.
+        """
+        self.background_label.setFixedSize(self.size()) # Set the size of the label to fill the window.
+        self.login_window.setFixedSize(self.size()) # Set the size of the login window to fill the main window.
         
         return super().resizeEvent(event)
     
-    def mousePressEvent(self, event: QMouseEvent):
-        try:
-            profile_button = self.top_bar.buttons.profile_button
-            drop_menu = profile_button.drop_menu
-            
-            if not drop_menu.geometry().contains(event.pos()): # User clicked outside drop menu.
-                drop_menu.deleteLater() # Delete the drop menu.
-                profile_button._is_showing = False # Set the drop_menu as no longer showing.
-        
-        except AttributeError:
-            pass # If the variables don't exist, pass the error and ignore it.
-        
-        except RuntimeError:
-            pass # Once the widget is deleted, runtime error occours - ignore.
-        
-        return super().mousePressEvent(event)
+    class BackgroundLabel(QLabel):
+        def __init__(self, parent: QWidget):
+            """A QLabel object functioning as the background label to fill the widget.
+
+            Args:
+                parent (QWidget): Parent widget of the label.
+            """            
+            super().__init__(parent)
+            self.setFixedSize(parent.size())
+            self.setStyleSheet("background-color: red;")
