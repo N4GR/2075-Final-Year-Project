@@ -21,7 +21,7 @@ class LoginWindow(QWidget):
     
     def _add_widgets(self):
         """A function to add widgets related to the widget to the widget."""
-        self.background_label = self.BackgroundLabel(self)
+        self.background = self.Background(self)
         self.login_panel = self.LoginPanel(self)
     
     def _add_layout(self):
@@ -34,7 +34,7 @@ class LoginWindow(QWidget):
         Args:
             event (QResizeEvent): QResizeEvent from PySide6.
         """
-        self.background_label.setFixedSize(self.size()) # Set the size of the label to fill the window.
+        self.background.setFixedSize(self.size()) # Set the size of the label to fill the window.
         
         self.login_panel.move(
             self.width() * 0.1, # 10% of the window width.
@@ -45,7 +45,7 @@ class LoginWindow(QWidget):
         
         return super().resizeEvent(event)
     
-    class BackgroundLabel(QLabel):
+    class Background(QWidget):
         def __init__(self, parent: QWidget):
             """A QLabel object functioning as the background label to fill the widget.
 
@@ -54,7 +54,107 @@ class LoginWindow(QWidget):
             """            
             super().__init__(parent)
             self.setFixedSize(parent.size())
-            self.setStyleSheet("background-color: #313338;")
+            
+            self.bottom_right_widget = self.BottomRightWidget(self)
+            self.background_label = self.BackgroundLabel(self)
+        
+        class BackgroundLabel(QLabel):
+            def __init__(self, parent: QWidget):
+                super().__init__(parent)
+                self.setFixedSize(self.parentWidget().size())
+                self.setPixmap(self.generate_pixmap())
+            
+            def generate_pixmap(self) -> QPixmap:
+                pixmap = QPixmap(self.size())
+                pixmap.fill(Qt.GlobalColor.transparent)
+                
+                points = [
+                    QPoint(0, 0), # Top-left.
+                    QPoint(self.width(), 0), # Top-right.
+                    QPoint(self.width(), self.height() / 2), # Mid-right.
+                    QPoint(self.width() / 2, self.height()), # Bottom-mid.
+                    QPoint(0, self.height()) # Bottom-left.
+                ]
+                
+                painter = QPainter(pixmap)
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.setBrush(QBrush(QColor("#313338")))
+                painter.drawPolygon(points)
+                painter.end()
+                
+                return pixmap
+            
+            def resizeEvent(self, event: QResizeEvent):
+                self.setPixmap(self.generate_pixmap())
+                
+                return super().resizeEvent(event)
+        
+        class BottomRightWidget(QWidget):
+            def __init__(self, parent: QWidget):
+                super().__init__(parent)
+                self.setFixedSize(
+                    self.parentWidget().width() / 2 + 100,
+                    self.parentWidget().height() / 2 + 100
+                ) # Half the size of the window with a 25px offset.
+                
+                self.move(
+                    self.width() / 2,
+                    self.height() / 2
+                ) # Bottom right of screen.
+                
+                
+                self.background_label = QLabel(self)
+                self.background_label.setFixedSize(self.size())
+                self.background_label.setStyleSheet("background-color: #1e1f22;")
+
+                self.grid_label = QLabel(self, size = self.size())
+                self.icon_size = 50
+                self.texture_icon = get_svg("/assets/svg/translate.svg", QSize(self.icon_size, self.icon_size), QColor("#2346a5"))
+                self.grid_label.setPixmap(self.get_texture_grid_pixmap())
+            
+            def get_texture_grid_pixmap(self) -> QPixmap:
+                max_rows = int(self.width() / self.icon_size)
+                max_columns = int(self.height() / self.icon_size)
+                
+                pixmap = QPixmap(self.size())
+                pixmap.fill(Qt.GlobalColor.transparent)
+                
+                painter = QPainter(pixmap)
+                for row in range(max_rows):
+                    for column in range(max_columns):
+                        point = QPoint(
+                            self.icon_size * row,
+                            self.icon_size * column
+                        )
+                        
+                        painter.drawPixmap(point, self.texture_icon)
+                
+                painter.end()
+                
+                return pixmap
+                
+            def resizeEvent(self, event):
+                self.background_label.setFixedSize(self.size()) # Always fill.
+                self.grid_label.setFixedSize(self.size()) # Resize the grid label.
+                self.grid_label.setPixmap(self.get_texture_grid_pixmap()) # Regenerate the icon grid when the window resizes.
+                return super().resizeEvent(event)
+        
+        def resizeEvent(self, event: QResizeEvent):
+            # Change the size of the bottom right label.
+            self.bottom_right_widget.setFixedSize(
+                self.width() / 2 + 100,
+                self.height() / 2 + 100
+            ) # Half the size of the window with a 25px offset.
+            
+            self.bottom_right_widget.move(
+                self.width() / 2,
+                self.height() / 2
+            ) # Bottom right of screen.
+            
+            # Regenerate the pixmap with the given size.
+            self.background_label.setFixedSize(self.size())
+            
+            return super().resizeEvent(event)
     
     class LoginPanel(QWidget):
         def __init__(self, parent: QWidget):
@@ -102,7 +202,7 @@ class LoginWindow(QWidget):
                 self.setFixedSize(parent.size())
                 self.setStyleSheet(
                     "background-color: #1e1f22;"
-                    "border-radius: 15px;" # Add a rounded border to the widget.
+                    "border-radius: 15px;"
                 )
         
         class UserInput(QWidget):
@@ -214,12 +314,26 @@ class LoginWindow(QWidget):
                     super().__init__(parent)
                     font_manager : FontManager = QApplication.instance().property("FontManager") # Get the font manager from the Application instance.
                     font = font_manager.caskaydia.bold # Retrieve the caskaydia bold font.
-                    font.setPointSize(15)
-                    
+
                     self.setText(button_name.upper())
                     self.setFont(font)
-                    
+
                     self.setFixedHeight(50)
+                    
+                    self.setStyleSheet("""
+                        QPushButton {
+                            background-color: #383a40;
+                            font-size: 15pt;
+                            border-radius: 15px;
+                        }
+                        QPushButton:hover {
+                            border: 2px solid transparent;
+                        }
+                        QPushButton:pressed {
+                            border: 4px solid transparent;
+                            font-size: 14pt;
+                        }
+                    """)
             
             class Login(Button):
                 def __init__(self, parent: QWidget):
@@ -232,7 +346,11 @@ class LoginWindow(QWidget):
                     self.clicked.connect(self._click)
                 
                 def _click(self):
-                    pass
+                    main_window = QApplication.topLevelWidgets()[0]
+                    # Show the topbar.
+                    main_window.top_bar.show()
+                    
+                    main_window.login_window.deleteLater() # Delete the login window.
             
             class Register(Button):
                 def __init__(self, parent: QWidget):
