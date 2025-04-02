@@ -57,6 +57,7 @@ class LoginWindow(QWidget):
             
             self.bottom_right_widget = self.BottomRightWidget(self)
             self.background_label = self.BackgroundLabel(self)
+            self.bottom_left_widget = self.BottomLeftWidget(self)
         
         class BackgroundLabel(QLabel):
             def __init__(self, parent: QWidget):
@@ -89,6 +90,104 @@ class LoginWindow(QWidget):
                 
                 return super().resizeEvent(event)
         
+        class BottomLeftWidget(QWidget):
+            def __init__(
+                    self,
+                    parent: QWidget
+            ):
+                super().__init__(parent)
+                # Get the colour manager object to obtain colour data.
+                self.colour_manager : ColourManager = QApplication.instance().property("ColourManager")
+                
+                # Get the font manager object to handle font data.
+                self.font_manager : FontManager = QApplication.instance().property("FontManager")
+                
+                # Create the logo label.
+                # Get the smallest value of the widget width or height to keep the logo 1:1 ratio.
+                smallest_size_value = min([self.height(), self.width()])
+                
+                self.logo_label = QLabel(self)
+                self.logo_colours = [
+                    QColor(self.colour_manager.data["logo_background"]),
+                    QColor(self.colour_manager.data["logo_foreground"])
+                ]
+                
+                self.logo_label.setPixmap(
+                    get_svg_using_elements(
+                        "/assets/svg/logo.svg",
+                        self.logo_colours,
+                        size = QSize(
+                            smallest_size_value,
+                            smallest_size_value
+                        )
+                    )
+                ) # Set the pixmap of the label to the modified SVG.
+                
+                # Set the size of the logo label to be a 1:1 of smallest_size_value.
+                self.logo_label.setFixedSize(smallest_size_value, smallest_size_value)
+                
+                # Create the logo title label.
+                self.logo_title_label = QLabel(self)
+                self.logo_title_label.setText("METAPHRAST")
+                
+                self.logo_title_font = self.font_manager.caskaydia.bold # Get the font of the logo title.
+                self.logo_title_font.setPointSize(self.height() * 0.5)
+                
+                self.logo_title_label.setFont(self.logo_title_font) # Set the font.
+
+                self.logo_title_label.setStyleSheet(
+                    f"color: {self.colour_manager.data['logo_title']};"
+                )
+                
+                self.logo_title_label.setFixedSize(self.size())
+                
+                # Update size values of widget.
+                self.update_values()
+                
+            def update_values(self):
+                # Change the size of the bottom left widget.
+                self.setFixedSize(
+                    self.parentWidget().width() * 0.5, # 50% of window width.
+                    self.parentWidget().height() * 0.1 # 10% of window height.
+                ) # Percentage of window.
+                
+                self.move(
+                    self.parentWidget().width() * 0.01, # 1% of window width.
+                    (
+                        self.parentWidget().height()
+                        - self.height()
+                    )
+                    - (self.parentWidget().width() * 0.01) # 1% of window height.
+                ) # Bottom left of window.
+                
+                # Update logo to fit new smallest size.
+                smallest_size = min(self.height(), self.width())
+                
+                self.logo_label.setPixmap(
+                    get_svg_using_elements(
+                        "/assets/svg/logo.svg",
+                        self.logo_colours,
+                        size = QSize(
+                            smallest_size,
+                            smallest_size
+                        )
+                    )
+                ) # Regenerate new modified SVG with new scaling.
+                
+                self.logo_label.setFixedSize(
+                    smallest_size, smallest_size
+                ) # Set logo label to new smallest size.
+                
+                # Update logo title to fit new size.
+                self.logo_title_label.setFixedSize(self.size())
+                self.logo_title_label.move(
+                    self.logo_label.width() + 10, # Right side of logo label with 10px offset.
+                    0
+                )
+                
+                self.logo_title_font.setPointSize(self.logo_title_label.height() * 0.5) # Set the font to fit the new size.
+                self.logo_title_label.setFont(self.logo_title_font)
+        
         class BottomRightWidget(QWidget):
             def __init__(self, parent: QWidget):
                 super().__init__(parent)
@@ -102,14 +201,22 @@ class LoginWindow(QWidget):
                     self.height() / 2
                 ) # Bottom right of screen.
                 
+                # Get the colour manager to set colours.
+                self.colour_manager : ColourManager = QApplication.instance().property("ColourManager")
                 
+                # Create the background of the grid.
                 self.background_label = QLabel(self)
                 self.background_label.setFixedSize(self.size())
-                self.background_label.setStyleSheet("background-color: #1e1f22;")
+                self.background_label.setStyleSheet(f"background-color: {self.colour_manager.data['login_grid_background']};")
 
+                # Generate the grid to overlay over the background.
                 self.grid_label = QLabel(self, size = self.size())
                 self.icon_size = 50
-                self.texture_icon = get_svg("/assets/svg/translate.svg", QSize(self.icon_size, self.icon_size), QColor("#2346a5"))
+                self.texture_icon = get_svg(
+                    "/assets/svg/translate.svg",
+                    QSize(self.icon_size, self.icon_size),
+                    QColor(self.colour_manager.data['login_grid_icon'])
+                )
                 self.grid_label.setPixmap(self.get_texture_grid_pixmap())
             
             def get_texture_grid_pixmap(self) -> QPixmap:
@@ -150,6 +257,9 @@ class LoginWindow(QWidget):
                 self.width() / 2,
                 self.height() / 2
             ) # Bottom right of screen.
+            
+            # Change the size of the bottom left widget.
+            self.bottom_left_widget.update_values()
             
             # Regenerate the pixmap with the given size.
             self.background_label.setFixedSize(self.size())

@@ -20,6 +20,11 @@ from PySide6.QtSvg import (
     QtSvg, QSvgRenderer
 )
 
+from PySide6.QtXml import (
+    QDomDocument
+)
+
 # Local imports.
 from src.shared.funcs import *
 from src.application.managers.font_manager import FontManager
+from src.application.managers.colour_manager import ColourManager
