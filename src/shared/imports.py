@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
 )
 
 from PySide6.QtGui import (
-    QResizeEvent, QPainter, QPixmap, QColor, QBrush
+    QResizeEvent, QPainter, QPixmap, QColor, QBrush, QIcon
 )
 
 from PySide6.QtCore import (

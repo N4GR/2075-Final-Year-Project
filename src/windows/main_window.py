@@ -20,6 +20,12 @@ class MainWindow(QMainWindow):
         
         self.setMinimumSize(800, 600) # Set a minimum size for the window to be displayed as.
         
+        # Set the window icon.
+        self.setWindowIcon(QIcon(path("/assets/svg/logo.png")))
+        
+        # Set the window icon of the application.
+        QApplication.setWindowIcon(QIcon(path("/assets/svg/logo.png")))
+        
         # FOR TESTING PURPOSES, MOVING THE WINDOW TO A DIFFERENT DISPLAY.
         for screen in QApplication.screens():
             if screen.name() == "Acer P226HQ":
