@@ -248,7 +248,8 @@ class LoginButton(Button):
         super().__init__(parent, "login")
         
         self.clicked.connect(self._on_click)
-        
+    
+    @Decorators.api
     def _on_click(self):
         window : LoginWindow = get_property("LoginWindow")
         open_panel : QWidget = window.open_panel
@@ -276,51 +277,16 @@ class LoginButton(Button):
             
             return
         
+        # API handling.
+        self.api : ApiClient
+        
         username = username_input.text()
         password = password_input.text()
         
-        self.login_user(username, password, "default")
-
-    @Decorators.api
-    def login_user(self, username: str, password: str, profile: str):
-        self.api : ApiClient = self.api
-        payload = {
-            "username": username,
-            "password": password,
-            "profile": "default"
-        }
+        from src.widgets.authentication import Login
         
-        self.api.post("http://localhost:8080/login", payload, self._api_response)
-
-    def _api_response(self, response: dict):
-        if "sucess" in response:
-            self.log.info("Login successful.")
-            
-            return
-        
-        panel : RegisterPanel = self.parentWidget()
-        username_input : UsernameInput = panel.username_input
-        password_input : PasswordInput = panel.password_input
-        
-        username_input.reset()
-        password_input.reset()
-        
-        if "error" in response:
-            result_text = response["error"]
-            
-            if result_text == "Password doesn't match.":
-                password_input.set_error("Password doesn't match.")
-                
-                return
-            
-            if result_text == "Username not found.":
-                username_input.set_error("User not found.")
-                
-                return
-        
-        
-        print(response)
-
+        self.login = Login(self, username, password).run()
+    
 @Decorators.autolog
 class RegisterButton(Button):
     log : logging.Logger
@@ -329,7 +295,8 @@ class RegisterButton(Button):
         super().__init__(parent, "register")
         
         self.clicked.connect(self._on_click)
-        
+    
+    @Decorators.api
     def _on_click(self):
         window : LoginWindow = get_property("LoginWindow")
         open_panel : QWidget = window.open_panel
@@ -361,37 +328,21 @@ class RegisterButton(Button):
         username = username_input.text()
         password = password_input.text()
         
-        self.register_user(username, password, "test")
-    
-    @Decorators.api
-    def register_user(self, username: str, password: str, profile: str):
-        self.api : ApiClient = self.api
-        payload = {
-            "username": username,
-            "password": password,
-            "profile": "default"
-        }
+        from src.widgets.authentication import Register
         
-        self.api.post("http://localhost:8080/register", payload, self._api_response)
+        self.register = Register(self, username, password).run()
     
-    def _api_response(self, response: dict):
-        if "success" in response:
-            self.log.info("Registration successful.")
-            
-            return
+    def _registration_complete(self):
+        from src.widgets.authentication import Login
         
         panel : RegisterPanel = self.parentWidget()
         username_input : UsernameInput = panel.username_input
-        username_input.reset()
+        password_input : PasswordInput = panel.password_input
         
-        if "error" in response:
-            result_text = response["error"]
-            
-            if result_text == "Username exists.":
-                username_input.set_error("Username exists.")
-                
-                return
+        username = username_input.text()
+        password = password_input.text()
         
+        self.login = Login(self, username, password).run()
 
 class ProfileSelection(QWidget):
     def __init__(self, parent: QWidget):

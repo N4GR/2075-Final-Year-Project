@@ -1,67 +1,66 @@
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
-from PySide6.QtCore import Signal, QUrl, QByteArray, QObject
+from PySide6.QtCore import QUrl, QObject, QJsonDocument, QTimer
+from PySide6.QtWidgets import QMessageBox
 
 from logging import Logger
 import json
+from typing import Callable
+
 
 from src.shared.decorators import Decorators
 
 @Decorators.autolog
 class ApiClient(QObject):
-    request_finished = Signal(object)
     log : Logger
-    _instance = None
-    
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(ApiClient, cls).__new__(cls)
-        
-        return cls._instance
     
     def __init__(self, parent = None):
-        if hasattr(self, "_instantialised") and self._instantialised:
-            return
-        
         super().__init__(parent)
+        self.timeout = 5000
         
-        self.network_manager = QNetworkAccessManager(self)
-        self.network_manager.finished.connect(self._handle_response)
+        self.network_manager = QNetworkAccessManager(parent)
+        self.network_manager.finished.connect(self._reply)
 
-        self._callback = None
-        self._instantialised = True
+        self._connections : dict[QNetworkReply, Callable] = {}
+        self._timers : dict[QNetworkReply, QTimer] = {}
     
-    def _handle_response(self, reply: QNetworkReply):
-        http_status = reply.attribute(QNetworkRequest.Attribute.HttpStatusCodeAttribute)
-        error = reply.error()
-        error_string = reply.errorString()
-        
-        self.log.debug(f"HTTP Status: {http_status}, Qt Error: {error}, Message: {error_string}")
-        
+    def _reply(self, reply: QNetworkReply):
         data = reply.readAll().data().decode()
-        self.log.debug(f"Raw response: {data}")
+        error = reply.error()
         
-        try:
-            json_data = json.loads(data)
-        
-        except json.JSONDecodeError as e:
-            json_data = {"error": "Invalid JSON", "details": str(e), "raw": data}
-            
+        if error == QNetworkReply.NetworkError.ConnectionRefusedError:
             return
         
-        if http_status == 200:
-            self.request_finished.emit(json_data)
-        
-        if self._callback:
-            self._callback(json_data)
-        
-        reply.deleteLater()
+        connection = self._connections.pop(reply, None)
+        if connection:
+            connection(data)
     
-    def post(self, endpoint: str, payload: dict, callback = None):
-        self._callback = callback
-        
-        url = QUrl(endpoint)
-        request = QNetworkRequest(url)
+    def post(self, url: str, payload: dict, connection: Callable = None):
+        request = QNetworkRequest(QUrl(url))
         request.setHeader(QNetworkRequest.KnownHeaders.ContentTypeHeader, "application/json")
         
-        data = QByteArray(json.dumps(payload).encode("utf-8"))
-        self.network_manager.post(request, data)
+        json_data = QJsonDocument.fromVariant(payload).toJson()
+        
+        reply = self.network_manager.post(request, json_data)
+        
+        if connection:
+            self._connections[reply] = connection
+            
+            timer = QTimer(self)
+            timer.setSingleShot(True)
+            timer.setInterval(self.timeout)
+            timer.timeout.connect(lambda : self._on_timeout(reply))
+            timer.start()
+                        
+            self._timers[reply] = timer
+    
+    def _on_timeout(self, reply: QNetworkReply):
+        timer = self._timers[reply]
+        timer.deleteLater()
+        
+        popup = QMessageBox(self.parent())
+        popup.setWindowTitle("API Network Timeout")
+        popup.setText(f"API timed out after {self.timeout / 1000} seconds.")
+        popup.setIcon(QMessageBox.Icon.Warning)
+        popup.setStandardButtons(QMessageBox.StandardButton.Cancel | QMessageBox.StandardButton.Ok)
+        
+        popup.exec()
