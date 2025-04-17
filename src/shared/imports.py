@@ -23,7 +23,10 @@ from PySide6.QtNetwork import (
     QNetworkAccessManager, QNetworkRequest, QNetworkReply
 )
 
+import keyring
+
 # Local imports.
+from src.shared.globals import *
 from src.shared.funcs import *
 from src.shared.pil import *
 from src.shared.decorators import Decorators

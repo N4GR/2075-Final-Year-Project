@@ -333,6 +333,12 @@ class RegisterButton(Button):
         
         if profile_upload.uploading_profile is None:
             profile_src = path(profile_selection.selected_profile.icon_src)
+            
+            profile_size = os.path.getsize(profile_src)
+            profile_file_size_kb = round(profile_size / 1024, 2)
+            progress_label : FileUploadProgressLabel = profile_upload.file_upload_progress_label
+            progress_label.setText(f"0/{profile_file_size_kb}KB")
+            progress_label.setHidden(False)
         
         else:
             profile_src = path(profile_upload.uploading_profile)
@@ -353,6 +359,7 @@ class RegisterButton(Button):
         
         self.login = Login(self, username, password).run()
 
+@Decorators.property
 class ProfileSelection(QWidget):
     def __init__(self, parent: QWidget):
         """Profile selection QWidget, used for the user to select a profile from the defaults available.
@@ -451,6 +458,7 @@ class ProfilePicture(QPushButton):
         
         parent.selected_profile = self
 
+@Decorators.property
 class ProfileUpload(QWidget):
     def __init__(self, parent: QWidget):
         super().__init__(parent)
@@ -558,7 +566,6 @@ class FileNameLabel(QLabel):
     def __init__(self, parent: QWidget):
         super().__init__(parent)
         self.setText("Upload a profile or select one from defaults.")
-
 
 class FileCorrectLabel(QLabel):
     def __init__(self, parent: QWidget):
