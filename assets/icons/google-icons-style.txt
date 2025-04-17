@@ -1,0 +1,6 @@
+Fill: False
+Weight: 400
+Optical Size: 40
+Size: 512
+Colour: #FFFFFF
+Type: PNG
