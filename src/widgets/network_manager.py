@@ -26,15 +26,27 @@ class ApiClient(QObject):
     def _reply(self, reply: QNetworkReply):
         data = reply.readAll().data().decode()
         error = reply.error()
+        reply_url = reply.url().toString()
+        
+        self.log.info(f"Reply from [{reply_url}]")
+        
+        # Delete the timer.
+        timer = self._timers.pop(reply, QTimer)
+        if timer:
+            timer.stop()
+            timer.deleteLater()
         
         if error == QNetworkReply.NetworkError.ConnectionRefusedError:
             return
         
-        connection = self._connections.pop(reply, None)
+        # Get the connection and call it with the data.
+        connection = self._connections.pop(reply, Callable)
         if connection:
             connection(data)
     
     def post(self, url: str, payload: dict, connection: Callable = None):
+        self.log.info(f"Sending POST request to [{url}]")
+        
         request = QNetworkRequest(QUrl(url))
         request.setHeader(QNetworkRequest.KnownHeaders.ContentTypeHeader, "application/json")
         
@@ -56,10 +68,15 @@ class ApiClient(QObject):
     def _on_timeout(self, reply: QNetworkReply):
         timer = self._timers[reply]
         timer.deleteLater()
+        timer_seconds = int(self.timeout / 1000)
+        
+        reply_url = reply.url().toString()
+        
+        self.log.info(f"Request timed out to [{reply_url}] after {timer_seconds} seconds.")
         
         popup = QMessageBox(self.parent())
         popup.setWindowTitle("API Network Timeout")
-        popup.setText(f"API timed out after {self.timeout / 1000} seconds.")
+        popup.setText(f"API timed out after {timer_seconds} seconds.")
         popup.setIcon(QMessageBox.Icon.Warning)
         popup.setStandardButtons(QMessageBox.StandardButton.Cancel | QMessageBox.StandardButton.Ok)
         
