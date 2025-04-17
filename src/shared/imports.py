@@ -3,11 +3,12 @@ import os
 import logging
 import json
 import sys
+import random
 
 # Third-party imports.
 from PySide6.QtWidgets import (
     QWidget, QApplication, QVBoxLayout, QLabel, QSizePolicy, QHBoxLayout, QSpacerItem,
-    QLineEdit, QPushButton, QGraphicsDropShadowEffect, QGridLayout
+    QLineEdit, QPushButton, QGraphicsDropShadowEffect, QGridLayout, QFileDialog, QMessageBox
 )
 
 from PySide6.QtGui import (
@@ -24,6 +25,7 @@ from PySide6.QtNetwork import (
 
 # Local imports.
 from src.shared.funcs import *
+from src.shared.pil import *
 from src.shared.decorators import Decorators
 
 from src.widgets.topbar_widget import TopBarWidget
