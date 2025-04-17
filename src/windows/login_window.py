@@ -1,478 +1,417 @@
 from src.shared.imports import *
 
+@Decorators.autolog
+@Decorators.property
 class LoginWindow(QWidget):
-    def __init__(self, parent: QMainWindow):
-        """A QWidget subclass functioning as the LoginWindow of the application.
-
-        Args:
-            parent (QMainWindow): Parent of the login window, a QMainWindow object.
-        """        
+    log : logging.Logger
+    
+    def __init__(self, parent: QWidget):
         super().__init__(parent)
+        self.open_panel : QWidget = None
         
-        self._add_design()
-        self._add_widgets()
-        self._add_layout()
+        self._set_style()
+        self._set_layout()
         
-        self.show() # Show the window once all has loaded.
-    
-    def _add_design(self):
-        """A function to add design elements to the widget."""
-        self.setFixedSize(self.parentWidget().size()) # Set a minimum size for the window to be displayed as.
-    
-    def _add_widgets(self):
-        """A function to add widgets related to the widget to the widget."""
-        self.background = self.Background(self)
-        self.login_panel = self.LoginPanel(self)
-    
-    def _add_layout(self):
-        """A function to add the layout to the widget."""
-        pass
-    
-    def resizeEvent(self, event: QResizeEvent):
-        """A function called when the window is resized.
-
-        Args:
-            event (QResizeEvent): QResizeEvent from PySide6.
-        """
-        self.background.setFixedSize(self.size()) # Set the size of the label to fill the window.
+        self.change_panel(LoginPanel)
         
-        self.login_panel.move(
-            self.width() * 0.1, # 10% of the window width.
-            self.height() / 2
-            - self.login_panel.height() / 2 # To centre the panel vertically.
-            - self.height() * 0.1 # 10% offset to push upward.
+    def _set_style(self):
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
+        self.setStyleSheet(
+            "background-color: #1f1f1f;"
+            "border-radius: 15px;"
         )
         
-        return super().resizeEvent(event)
+        self.effect = QGraphicsDropShadowEffect(self)
+        self.effect.setBlurRadius(10)
+        self.effect.setOffset(0, 5)
+        self.effect.setColor(QColor(0, 0, 0, 100))
+        self.setGraphicsEffect(self.effect)
     
-    class Background(QWidget):
-        def __init__(self, parent: QWidget):
-            """A QLabel object functioning as the background label to fill the widget.
-
-            Args:
-                parent (QWidget): Parent widget of the label.
-            """            
-            super().__init__(parent)
-            self.setFixedSize(parent.size())
+    def _set_layout(self):
+        self.main_layout = QVBoxLayout()
+        self.main_layout.setContentsMargins(100, 0, 100, 0)
             
-            self.bottom_right_widget = self.BottomRightWidget(self)
-            self.background_label = self.BackgroundLabel(self)
-            self.bottom_left_widget = self.BottomLeftWidget(self)
-        
-        class BackgroundLabel(QLabel):
-            def __init__(self, parent: QWidget):
-                super().__init__(parent)
-                self.setFixedSize(self.parentWidget().size())
-                self.setPixmap(self.generate_pixmap())
-            
-            def generate_pixmap(self) -> QPixmap:
-                pixmap = QPixmap(self.size())
-                pixmap.fill(Qt.GlobalColor.transparent)
-                
-                points = [
-                    QPoint(0, 0), # Top-left.
-                    QPoint(self.width(), 0), # Top-right.
-                    QPoint(self.width(), self.height() / 2), # Mid-right.
-                    QPoint(self.width() / 2, self.height()), # Bottom-mid.
-                    QPoint(0, self.height()) # Bottom-left.
-                ]
-                
-                painter = QPainter(pixmap)
-                painter.setPen(Qt.PenStyle.NoPen)
-                painter.setBrush(QBrush(QColor("#313338")))
-                painter.drawPolygon(points)
-                painter.end()
-                
-                return pixmap
-            
-            def resizeEvent(self, event: QResizeEvent):
-                self.setPixmap(self.generate_pixmap())
-                
-                return super().resizeEvent(event)
-        
-        class BottomLeftWidget(QWidget):
-            def __init__(
-                    self,
-                    parent: QWidget
-            ):
-                super().__init__(parent)
-                # Get the colour manager object to obtain colour data.
-                self.colour_manager : ColourManager = QApplication.instance().property("ColourManager")
-                
-                # Get the font manager object to handle font data.
-                self.font_manager : FontManager = QApplication.instance().property("FontManager")
-                
-                # Create the logo label.
-                # Get the smallest value of the widget width or height to keep the logo 1:1 ratio.
-                smallest_size_value = min([self.height(), self.width()])
-                
-                self.logo_label = QLabel(self)
-                self.logo_colours = [
-                    QColor(self.colour_manager.data["logo_background"]),
-                    QColor(self.colour_manager.data["logo_foreground"])
-                ]
-                
-                self.logo_label.setPixmap(
-                    get_svg_using_elements(
-                        "/assets/svg/logo.svg",
-                        self.logo_colours,
-                        size = QSize(
-                            smallest_size_value,
-                            smallest_size_value
-                        )
-                    )
-                ) # Set the pixmap of the label to the modified SVG.
-                
-                # Set the size of the logo label to be a 1:1 of smallest_size_value.
-                self.logo_label.setFixedSize(smallest_size_value, smallest_size_value)
-                
-                # Create the logo title label.
-                self.logo_title_label = QLabel(self)
-                self.logo_title_label.setText("METAPHRAST")
-                
-                self.logo_title_font = self.font_manager.caskaydia.bold # Get the font of the logo title.
-                self.logo_title_font.setPointSize(self.height() * 0.5)
-                
-                self.logo_title_label.setFont(self.logo_title_font) # Set the font.
-
-                self.logo_title_label.setStyleSheet(
-                    f"color: {self.colour_manager.data['logo_title']};"
-                )
-                
-                self.logo_title_label.setFixedSize(self.size())
-                
-                # Update size values of widget.
-                self.update_values()
-                
-            def update_values(self):
-                # Change the size of the bottom left widget.
-                self.setFixedSize(
-                    self.parentWidget().width() * 0.5, # 50% of window width.
-                    self.parentWidget().height() * 0.1 # 10% of window height.
-                ) # Percentage of window.
-                
-                self.move(
-                    self.parentWidget().width() * 0.01, # 1% of window width.
-                    (
-                        self.parentWidget().height()
-                        - self.height()
-                    )
-                    - (self.parentWidget().width() * 0.01) # 1% of window height.
-                ) # Bottom left of window.
-                
-                # Update logo to fit new smallest size.
-                smallest_size = min(self.height(), self.width())
-                
-                self.logo_label.setPixmap(
-                    get_svg_using_elements(
-                        "/assets/svg/logo.svg",
-                        self.logo_colours,
-                        size = QSize(
-                            smallest_size,
-                            smallest_size
-                        )
-                    )
-                ) # Regenerate new modified SVG with new scaling.
-                
-                self.logo_label.setFixedSize(
-                    smallest_size, smallest_size
-                ) # Set logo label to new smallest size.
-                
-                # Update logo title to fit new size.
-                self.logo_title_label.setFixedSize(self.size())
-                self.logo_title_label.move(
-                    self.logo_label.width() + 10, # Right side of logo label with 10px offset.
-                    0
-                )
-                
-                self.logo_title_font.setPointSize(self.logo_title_label.height() * 0.5) # Set the font to fit the new size.
-                self.logo_title_label.setFont(self.logo_title_font)
-        
-        class BottomRightWidget(QWidget):
-            def __init__(self, parent: QWidget):
-                super().__init__(parent)
-                self.setFixedSize(
-                    self.parentWidget().width() / 2 + 100,
-                    self.parentWidget().height() / 2 + 100
-                ) # Half the size of the window with a 25px offset.
-                
-                self.move(
-                    self.width() / 2,
-                    self.height() / 2
-                ) # Bottom right of screen.
-                
-                # Get the colour manager to set colours.
-                self.colour_manager : ColourManager = QApplication.instance().property("ColourManager")
-                
-                # Create the background of the grid.
-                self.background_label = QLabel(self)
-                self.background_label.setFixedSize(self.size())
-                self.background_label.setStyleSheet(f"background-color: {self.colour_manager.data['login_grid_background']};")
-
-                # Generate the grid to overlay over the background.
-                self.grid_label = QLabel(self, size = self.size())
-                self.icon_size = 50
-                self.texture_icon = get_svg(
-                    "/assets/svg/translate.svg",
-                    QSize(self.icon_size, self.icon_size),
-                    QColor(self.colour_manager.data['login_grid_icon'])
-                )
-                self.grid_label.setPixmap(self.get_texture_grid_pixmap())
-            
-            def get_texture_grid_pixmap(self) -> QPixmap:
-                max_rows = int(self.width() / self.icon_size)
-                max_columns = int(self.height() / self.icon_size)
-                
-                pixmap = QPixmap(self.size())
-                pixmap.fill(Qt.GlobalColor.transparent)
-                
-                painter = QPainter(pixmap)
-                for row in range(max_rows):
-                    for column in range(max_columns):
-                        point = QPoint(
-                            self.icon_size * row,
-                            self.icon_size * column
-                        )
-                        
-                        painter.drawPixmap(point, self.texture_icon)
-                
-                painter.end()
-                
-                return pixmap
-                
-            def resizeEvent(self, event):
-                self.background_label.setFixedSize(self.size()) # Always fill.
-                self.grid_label.setFixedSize(self.size()) # Resize the grid label.
-                self.grid_label.setPixmap(self.get_texture_grid_pixmap()) # Regenerate the icon grid when the window resizes.
-                return super().resizeEvent(event)
-        
-        def resizeEvent(self, event: QResizeEvent):
-            # Change the size of the bottom right label.
-            self.bottom_right_widget.setFixedSize(
-                self.width() / 2 + 100,
-                self.height() / 2 + 100
-            ) # Half the size of the window with a 25px offset.
-            
-            self.bottom_right_widget.move(
-                self.width() / 2,
-                self.height() / 2
-            ) # Bottom right of screen.
-            
-            # Change the size of the bottom left widget.
-            self.bottom_left_widget.update_values()
-            
-            # Regenerate the pixmap with the given size.
-            self.background_label.setFixedSize(self.size())
-            
-            return super().resizeEvent(event)
+        self.setLayout(self.main_layout)
     
-    class LoginPanel(QWidget):
-        def __init__(self, parent: QWidget):
-            """A QWidget object containing other widgets related to the login panel - username, password ect.
+    def change_panel(self, panel: QWidget) -> bool:
+        """Changes the panel to a QWidget.
 
-            Args:
-                parent (QWidget): Parent widget of the widget.
-            """            
-            super().__init__(parent)
-            self.setFixedSize(
-                400, 400
+        Args:
+            panel (QWidget): Panel to change to.
+
+        Returns:
+            bool: False if already open, True if change successful.
+        """
+        panel_name = panel.__name__
+        
+        if self.open_panel:
+            self.open_panel.deleteLater()
+        
+        self.open_panel = panel(self)
+        self.main_layout.addWidget(self.open_panel)
+        
+        return True
+
+@Decorators.autolog
+@Decorators.property
+class RegisterPanel(QWidget):
+    log : logging.Logger
+    
+    def __init__(self, parent: QWidget):
+        super().__init__(parent)
+        
+        self._set_style()
+        self._set_widgets()
+        self._set_buttons()
+        self._set_layout()
+    
+    def _set_style(self):
+        self.setMaximumWidth(500)
+        self.setMaximumHeight(500)
+        
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
+        self.setStyleSheet(
+            "background-color: #171717;"
+            "border-radius: 15px;"
+        )
+        
+        self.effect = QGraphicsDropShadowEffect(self)
+        self.effect.setBlurRadius(10)
+        self.effect.setOffset(0, 5)
+        self.effect.setColor(QColor(0, 0, 0, 100))
+        self.setGraphicsEffect(self.effect)
+    
+    def _set_widgets(self):
+        self.username_input = UsernameInput(self)
+        self.password_input = PasswordInput(self)
+        self.profile_selection = ProfileSelection(self)
+    
+    def _set_buttons(self):
+        self.button_layout = QHBoxLayout()
+        
+        self.login_button = LoginButton(self)
+        self.register_button = RegisterButton(self)
+        
+        self.button_layout.addWidget(self.login_button)
+        self.button_layout.addWidget(self.register_button)
+    
+    def _set_layout(self):
+        self.main_layout = QVBoxLayout()
+        self.main_layout.setContentsMargins(20, 10, 20, 10)
+        
+        self.main_layout.addWidget(self.username_input)
+        self.main_layout.addWidget(self.password_input)
+        self.main_layout.addWidget(self.profile_selection)
+        self.main_layout.addLayout(self.button_layout)
+        
+        self.setLayout(self.main_layout)
+
+@Decorators.autolog
+@Decorators.property
+class LoginPanel(QWidget):
+    log : logging.Logger
+    
+    def __init__(self, parent: QWidget):
+        super().__init__(parent)
+        self._set_style()
+        self._set_widgets()
+        self._set_buttons()
+        self._set_layout()
+    
+    def _set_style(self):
+        self.setMaximumWidth(500)
+        self.setMaximumHeight(500)
+        
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
+        self.setStyleSheet(
+            "background-color: #171717;"
+            "border-radius: 15px;"
+        )
+        
+        self.effect = QGraphicsDropShadowEffect(self)
+        self.effect.setBlurRadius(10)
+        self.effect.setOffset(0, 5)
+        self.effect.setColor(QColor(0, 0, 0, 100))
+        self.setGraphicsEffect(self.effect)
+    
+    def _set_widgets(self):
+        self.username_input = UsernameInput(self)
+        self.password_input = PasswordInput(self)
+    
+    def _set_buttons(self):
+        self.button_layout = QHBoxLayout()
+        
+        self.login_button = LoginButton(self)
+        self.register_button = RegisterButton(self)
+        
+        self.button_layout.addWidget(self.login_button)
+        self.button_layout.addWidget(self.register_button)
+    
+    def _set_layout(self):
+        self.main_layout = QVBoxLayout()
+        self.main_layout.setContentsMargins(20, 10, 20, 10)
+        
+        self.main_layout.addWidget(self.username_input)
+        self.main_layout.addWidget(self.password_input)
+        self.main_layout.addLayout(self.button_layout)
+        
+        self.setLayout(self.main_layout)
+
+class UserInput(QLineEdit):
+    def __init__(self, parent: QWidget, input_type: str):
+        super().__init__(parent)
+        self.input_type = input_type
+        self.error_showing = False
+        
+        self._set_style()
+    
+    def _set_style(self):
+        self.setPlaceholderText(self.input_type.capitalize())
+        self.setFixedHeight(50)
+        
+        self.effect = QGraphicsDropShadowEffect(self)
+        self.effect.setBlurRadius(10)
+        self.effect.setOffset(0, 5)
+        self.effect.setColor(QColor(0, 0, 0, 100))
+        self.setGraphicsEffect(self.effect)
+        
+        self.setStyleSheet(
+            "background-color: #1f1f1f;"
+            "font-size: 15pt;"
+        )
+    
+    def set_error(self, error_message: str):
+        self.setStyleSheet(
+            "background-color: #1f1f1f;"
+            "font-size: 15pt;"
+            "border: 2px solid red;"
+            "border-radius: 15px;"
+        )
+        
+        warning_icon = QIcon(path("/assets/icons/warning.png"))
+        warning_action = QAction(warning_icon, error_message, self)
+        warning_action.setVisible(True)
+        
+        self.addAction(warning_action, QLineEdit.ActionPosition.TrailingPosition)
+        
+        self.error_showing = True
+    
+    def reset(self):
+        if self.error_showing is False:
+            return
+        
+        for action in self.actions():
+            self.removeAction(action)
+        
+        self.setStyleSheet(
+            "background-color: #1f1f1f;"
+            "font-size: 15pt;"
+        )
+        
+        self.error_showing = False
+
+class UsernameInput(UserInput):
+    def __init__(self, parent: QWidget):
+        super().__init__(parent, "username")
+    
+class PasswordInput(UserInput):
+    def __init__(self, parent: QWidget):
+        super().__init__(parent, "password")
+        self.setEchoMode(QLineEdit.EchoMode.Password)
+
+class Button(QPushButton):
+    def __init__(self, parent: QWidget, button_type: str):
+        super().__init__(parent)
+        self.button_type = button_type
+        self.setText(button_type.upper())
+        
+        self.setFixedSize(200, 100)
+        
+        self.effect = QGraphicsDropShadowEffect(self)
+        self.effect.setBlurRadius(10)
+        self.effect.setOffset(0, 5)
+        self.effect.setColor(QColor(0, 0, 0, 100))
+        self.setGraphicsEffect(self.effect)
+        
+        self.setStyleSheet(
+            "background-color: #1f1f1f;"
+            "color: white;"
+            "font-weight: bold;"
+            "font-size: 20pt;"
+        )
+
+@Decorators.autolog
+class LoginButton(Button):
+    log : logging.Logger
+    
+    def __init__(self, parent: QWidget):
+        super().__init__(parent, "login")
+        
+        self.clicked.connect(self._on_click)
+    
+    @Decorators.api
+    def _on_click(self):
+        window : LoginWindow = get_property("LoginWindow")
+        open_panel : QWidget = window.open_panel
+
+        if not open_panel.__class__.__name__ == "LoginPanel":
+            window.change_panel(LoginPanel)
+            
+            return
+        
+        # Input variables.
+        panel : LoginPanel = self.parentWidget()
+        username_input : UsernameInput = panel.username_input
+        password_input : PasswordInput = panel.password_input
+        
+        username_input.reset()
+        password_input.reset()
+        
+        if username_input.text() == "":
+            username_input.set_error("Missing username.")
+
+            return
+        
+        if password_input.text() == "":
+            password_input.set_error("Missing password.")
+            
+            return
+        
+        # API handling.
+        self.api : ApiClient
+        
+        username = username_input.text()
+        password = password_input.text()
+        
+        from src.widgets.authentication import Login
+        
+        self.login = Login(self, username, password).run()
+    
+@Decorators.autolog
+class RegisterButton(Button):
+    log : logging.Logger
+    
+    def __init__(self, parent: QWidget):
+        super().__init__(parent, "register")
+        
+        self.clicked.connect(self._on_click)
+    
+    @Decorators.api
+    def _on_click(self):
+        window : LoginWindow = get_property("LoginWindow")
+        open_panel : QWidget = window.open_panel
+
+        if not open_panel.__class__.__name__ == "RegisterPanel":
+            window.change_panel(RegisterPanel)
+            
+            return
+        
+        # Input variables.
+        panel : RegisterPanel = self.parentWidget()
+        username_input : UsernameInput = panel.username_input
+        password_input : PasswordInput = panel.password_input
+        profile_selection : ProfileSelection = panel.profile_selection
+        
+        username_input.reset()
+        password_input.reset()
+        
+        if username_input.text() == "":
+            username_input.set_error("Missing username.")
+
+            return
+        
+        if password_input.text() == "":
+            password_input.set_error("Missing password.")
+            
+            return
+        
+        username = username_input.text()
+        password = password_input.text()
+        
+        from src.widgets.authentication import Register
+        
+        self.register = Register(self, username, password).run()
+    
+    def _registration_complete(self):
+        from src.widgets.authentication import Login
+        
+        panel : RegisterPanel = self.parentWidget()
+        username_input : UsernameInput = panel.username_input
+        password_input : PasswordInput = panel.password_input
+        
+        username = username_input.text()
+        password = password_input.text()
+        
+        self.login = Login(self, username, password).run()
+
+class ProfileSelection(QWidget):
+    def __init__(self, parent: QWidget):
+        super().__init__(parent)
+        self.max_columns = 8
+        self.max_rows = 2
+
+        self._set_layout()
+        self.load_profile_pictures()
+        
+        self.setFixedHeight(self.sizeHint().height())
+    
+        self.selected_profile : ProfilePicture = self.main_layout.itemAtPosition(0, 0).widget()
+        self.selected_profile.set_selected()
+    
+    def _set_layout(self):
+        self.main_layout = QGridLayout()
+        self.main_layout.setSpacing(5)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        
+        self.setLayout(self.main_layout)
+    
+    def load_profile_pictures(self):
+        profile_pictures = [path("/assets/profiles") + f"/{x}" for x in os.listdir(path("/assets/profiles"))]
+        
+        for row in range(self.max_rows):
+            for column in range(self.max_columns):
+                item_count = (self.max_columns * (row) + column)
+                self.main_layout.addWidget(ProfilePicture(self, profile_pictures[item_count]), row, column)
+                
+class ProfilePicture(QPushButton):
+    def __init__(self, parent: QWidget, icon_src: str):
+        super().__init__(parent)
+        self.icon_src = icon_src
+        self._set_style()
+        
+        self.clicked.connect(self._on_click)
+
+    def _set_style(self):
+        self.setFixedSize(50, 50)
+        
+        self.setIcon(
+            QPixmap(self.icon_src).scaled(
+                self.size(),
+                aspectMode = Qt.AspectRatioMode.IgnoreAspectRatio,
+                mode = Qt.TransformationMode.SmoothTransformation
             )
-            
-            self.background_label = self.BackgroundLabel(self)
-            
-            self.username_input = self.Username(self)
-            self.password_input = self.Password(self)
-            self.buttons = self.Buttons(self)
-            
-            self.main_layout = QVBoxLayout()
-            self.main_layout.addWidget(self.username_input)
-            self.main_layout.addWidget(self.password_input)
-            self.main_layout.addWidget(self.buttons)
-            
-            self.setLayout(self.main_layout)
+        )
+        self.setIconSize(QSize(self.height() - 5, self.width() - 5))
+    
+    def set_selected(self):
+        self.is_selected = True
         
-        def resizeEvent(self, event: QResizeEvent):
-            """A function called when the window is resized.
-
-            Args:
-                event (QResizeEvent): QResizeEvent from PySide6.
-            """
-            self.background_label.setFixedSize(self.size()) # Set the size of the label to fill the window.
-            
-            return super().resizeEvent(event)
-            
-        class BackgroundLabel(QLabel):
-            def __init__(self, parent: QWidget):
-                """A QLabel object functioning as the background label to fill the widget.
-
-                Args:
-                    parent (QWidget): Parent widget of the label.
-                """            
-                super().__init__(parent)
-                self.setFixedSize(parent.size())
-                self.setStyleSheet(
-                    "background-color: #1e1f22;"
-                    "border-radius: 15px;"
-                )
+        self.setStyleSheet("border-radius: 25px; border: 5px solid green;")
+    
+    def set_unselected(self):
+        self.is_selected = False
         
-        class UserInput(QWidget):
-            def __init__(self, parent: QWidget, input_type: str):
-                """A QWidget subclass used as the main class of a user input - containing a QLabel followed by a QTextEdit.
-
-                Args:
-                    parent (QWidget): Parent widget of the widget.
-                    input_type (str): Input type to be used as the text label and input placeholder text.
-                """
-                super().__init__(parent)
-                self.text_label = self.get_text_label(input_type)
-                self.text_input = self.get_text_input(input_type)
-                
-                self.main_layout = QVBoxLayout()
-                self.main_layout.addWidget(self.text_label)
-                self.main_layout.addWidget(self.text_input)
-                
-                self.setLayout(self.main_layout)
-
-            def get_text_label(self, text: str) -> QLabel:
-                """A function to retrieve the text label in the user input.
-
-                Args:
-                    text (str): Text to be displayed on the label.
-
-                Returns:
-                    QLabel: Generated returned label.
-                """
-                font_manager : FontManager = QApplication.instance().property("FontManager") # Get the font manager from the Application instance.
-                font = font_manager.caskaydia.bold # Retrieve the caskaydia bold font.
-                font.setPointSize(20)
-                
-                text_label = QLabel()
-                text_label.setText(text.upper())
-                text_label.setFont(font)
-                
-                return text_label
-            
-            def get_text_input(self, text: str) -> QLineEdit:
-                """A function to retrieve the text input widget.
-
-                Args:
-                    text (str): Text to be displayed on the QLineEdit
-
-                Returns:
-                    QLineEdit: Generated returned QLineEdit.
-                """
-                font_manager : FontManager = QApplication.instance().property("FontManager") # Get the font manager from the Application instance.
-                font = font_manager.caskaydia.regular # Retrieve the caskaydia regular font.
-                font.setPointSize(10)
-                
-                text_edit = QLineEdit()
-                text_edit.setPlaceholderText(text)
-                text_edit.setFont(font)
-                text_edit.setFixedHeight(40)
-                text_edit.setStyleSheet("""
-                    QLineEdit {
-                        border: 2px solid #4f525a;
-                        border-radius: 5px;
-                        background-color: #383a40;
-                    }
-                """)
-
-                return text_edit
-
-        class Username(UserInput):
-            def __init__(self, parent: QWidget):
-                """A UserInput subclass for the Username in the login panel.
-
-                Args:
-                    parent (QWidget): Parent of the widget.
-                """                
-                super().__init__(parent, "Username")
+        self.setStyleSheet("")
+    
+    def _on_click(self):
+        register_panel : RegisterPanel = get_property("RegisterPanel")
+        parent : ProfileSelection = self.parentWidget()
+        selected_profile = parent.selected_profile
         
-        class Password(UserInput):
-            def __init__(self, parent: QWidget):
-                """A UserInput subclass for the Password input in the login panel.
-
-                Args:
-                    parent (QWidget): Parent of the widget.
-                """                
-                super().__init__(parent, "Password")
-                self.text_input.setEchoMode(QLineEdit.EchoMode.Password) # Replace text added to the password input with *
+        if selected_profile.icon_src == self.icon_src:
+            return
         
-        class Buttons(QWidget):
-            def __init__(self, parent: QWidget):
-                """A QWidget subclass containing buttons related to the login panel.
-
-                Args:
-                    parent (QWidget): Parent of the widget.
-                """
-                super().__init__(parent)
-                self.login_button = self.Login(self)
-                self.register_button = self.Register(self)
-                
-                self.main_layout = QHBoxLayout()
-                self.main_layout.addWidget(self.login_button)
-                self.main_layout.addWidget(self.register_button)
-                self.setLayout(self.main_layout)
-            
-            class Button(QPushButton):
-                def __init__(self, parent: QWidget, button_name: str):
-                    """A QPushButton subclass being the main class of all button widgets related to the buttons class.
-
-                    Args:
-                        parent (QWidget): Parent of the widget.
-                    """
-                    super().__init__(parent)
-                    font_manager : FontManager = QApplication.instance().property("FontManager") # Get the font manager from the Application instance.
-                    font = font_manager.caskaydia.bold # Retrieve the caskaydia bold font.
-
-                    self.setText(button_name.upper())
-                    self.setFont(font)
-
-                    self.setFixedHeight(50)
-                    
-                    self.setStyleSheet("""
-                        QPushButton {
-                            background-color: #383a40;
-                            font-size: 15pt;
-                            border-radius: 15px;
-                        }
-                        QPushButton:hover {
-                            border: 2px solid transparent;
-                        }
-                        QPushButton:pressed {
-                            border: 4px solid transparent;
-                            font-size: 14pt;
-                        }
-                    """)
-            
-            class Login(Button):
-                def __init__(self, parent: QWidget):
-                    """A Login class of the Button subclass to handle logging in functionality.
-
-                    Args:
-                        parent (QWidget): Parent of the widget.
-                    """                    
-                    super().__init__(parent, "Login")
-                    self.clicked.connect(self._click)
-                
-                def _click(self):
-                    main_window = QApplication.topLevelWidgets()[0]
-                    # Show the topbar.
-                    main_window.top_bar.show()
-                    
-                    main_window.login_window.deleteLater() # Delete the login window.
-            
-            class Register(Button):
-                def __init__(self, parent: QWidget):
-                    """A Register class of the Button subclass to handle registering functionality.
-
-                    Args:
-                        parent (QWidget): Parent of the widget.
-                    """                    
-                    super().__init__(parent, "Register")
-                    self.clicked.connect(self._click)
-                
-                def _click(self):
-                    pass
-            
-            
+        selected_profile.set_unselected()
+        self.set_selected()
+        
+        parent.selected_profile = self

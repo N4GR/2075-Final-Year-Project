@@ -1,114 +1,65 @@
-from PySide6.QtSvg import QtSvg, QSvgRenderer
-from PySide6.QtGui import QPainter, QPixmap, QColor, QBrush
-from PySide6.QtCore import QSize, Qt
-from PySide6.QtXml import QDomDocument
+from typing import Any
+import sys
+import os
+
+from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QFontDatabase, QFont
+
+def get_property(name: str) -> Any:
+    """Return a property from the current instance of the application.
+    
+    Args:
+        name (str): Property name used when setting the property.
+    
+    Returns
+        Any: Any property set in the application.
+    """
+    fetched_property = QApplication.instance().property(name)
+
+    return fetched_property
+
+def set_property(name: str, value: Any):
+    """Set a property in the application to be globally accesible from get_property.
+
+    Args:
+        name (str): Name of the property to use when retrieving the property.
+        value (Any): Anything you'd like to set as the property.
+    """
+    QApplication.instance().setProperty(name, value)
 
 def path(src: str) -> str:
-    """A function to fix paths
-
+    """Path handling for when packaged with onefile.
+    
     Args:
-        src (str): Source directory to be fixed.
-
+        src (str): Path of the file or directory to obtain.
+    
     Returns:
-        str: Fixed Source directory.
+        str: Absolute path returned pyinstaller onefile compatible.
     """
-    if src[0] == "/": # Removes the first / from the relative path.
+    if src[0] == "/":
         src = src[1:]
     
-    return src
-
-def get_svg(src: str, size: QSize = None, colour: QColor = None) -> QPixmap:
-    renderer = QSvgRenderer(path(src))
-    pixmap = QPixmap(renderer.defaultSize())
+    if hasattr(sys, "_MEIPASS"):
+        # Running packaged.
+        return os.path.join(sys._MEIPASS, src)
     
-    pixmap.fill(Qt.GlobalColor.transparent)
-    painter = QPainter(pixmap)
-    renderer.render(painter)
-    
-    painter.setCompositionMode(painter.CompositionMode.CompositionMode_SourceIn)
-    
-    if colour is None:
-        painter.fillRect(pixmap.rect(), QColor(255, 0, 0))
     else:
-        painter.fillRect(pixmap.rect(), colour)
-    
-    painter.end()
-    
-    return pixmap.scaled(
-        size,
-        aspectMode = Qt.AspectRatioMode.IgnoreAspectRatio,
-        mode = Qt.TransformationMode.SmoothTransformation
-    )
+        return os.path.join(os.path.abspath("."), src)
 
-def replace_svg_elements(
-        src: str,
-        colours: list[QColor]
-) -> QDomDocument:
-    """A function to load an SVG as a document, replace colours within its style and return the document.
+def load_font(font_src: str) -> QFont:
+    """Creates a QFont object from a font file.
 
     Args:
-        src (str): Source string of the SVG file.
-        colours (list[QColor]): Colours to replace.
+        font_src (str): Relative path to the font file.
 
     Returns:
-        QDomDocument: Document editted.
+        QFont: QFont object generated from the file.
     """
-    # Loading to document data.
-    with open(path(src), "r") as file:
-        svg_data = file.read()
-        
-    # Creatin document object from read binary data.
-    dom = QDomDocument()
-    dom.setContent(svg_data)
+    font_id = QFontDatabase.addApplicationFont(path(font_src))
     
-    # Getting the style elements within the document.
-    dom_elements = dom.elementsByTagName("style")
+    if font_id == -1:
+        return None
     
-    # For each style element found in the dom document.
-    for i in range(dom_elements.count()):
-        dom_style_element = dom_elements.item(i).toElement() # Getting the element object.
-        dom_style_content = dom_style_element.text() # Getting the content of the element as string.
-        
-        # For each colour in the colours list.
-        for x in range(len(colours)):
-            colour = colours[x].name(QColor.NameFormat.HexRgb) # Get colour from list as hex string.
-            current_fill = f"fill_{x + 1}" # Get the name of the fill area in the document.
-            
-            # Replace the fill area with the new colour.
-            dom_style_content = dom_style_content.replace(current_fill, colour)
-        
-        # Set the updated style string back to dom_style_element.
-        text_node = dom_style_element.firstChild()
-        if text_node.isText():
-            text_node.setNodeValue(dom_style_content)
+    font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
     
-    # Return the modified QDomDocument.
-    return dom
-    
-def get_svg_using_elements(
-        src: str,
-        colours: list[QColor],
-        size: QSize = None,
-    ) -> QPixmap:
-    dom = replace_svg_elements(src, colours) # Obtain modified qdom XML.
-    dom_data = dom.toString() # Serialise modified XML to string.
-    
-    renderer = QSvgRenderer() # Create the renderer object.
-    renderer.load(dom_data.encode()) # Load the new SVG data to the renderer object.
-    
-    # Create and fill a blank pixmap to paint on.
-    pixmap = QPixmap(renderer.defaultSize())
-    pixmap.fill(Qt.GlobalColor.transparent)
-    
-    # Paint the SVG onto the pixmap using painter.
-    painter = QPainter(pixmap)
-    renderer.render(painter)
-    
-    painter.end()
-    
-    # Return a scaled version of the modified SVG as a QPixmap.
-    return pixmap.scaled(
-        size,
-        aspectMode = Qt.AspectRatioMode.IgnoreAspectRatio,
-        mode = Qt.TransformationMode.SmoothTransformation
-    )
+    return QFont(font_family)
