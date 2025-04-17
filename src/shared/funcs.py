@@ -36,6 +36,10 @@ def path(src: str) -> str:
     Returns:
         str: Absolute path returned pyinstaller onefile compatible.
     """
+    if os.path.isabs(src):
+        if os.path.exists(src):
+            return src
+    
     if src[0] == "/":
         src = src[1:]
     
