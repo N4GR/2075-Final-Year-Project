@@ -1,5 +1,7 @@
 API_URL = "http://localhost:8080"
-API_REGISTER = API_URL + "/post/register"
-API_CHALLENGE = API_URL + "/post/challenge"
-API_VERIFY = API_URL + "/post/verify"
-API_FILE_UPLOAD = API_URL + "/post/file"
+
+API_SRP_START = API_URL + "/srp/start"
+API_SRP_VERIFY = API_URL + "/srp/verify"
+API_SRP_REGISTER = API_URL + "/srp/register"
+
+API_FILE_UPLOAD = API_URL + "/file/upload"
