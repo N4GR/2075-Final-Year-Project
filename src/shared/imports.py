@@ -32,6 +32,10 @@ from src.shared.pil import *
 from src.shared.decorators import Decorators
 
 from src.widgets.topbar_widget import TopBarWidget
+
+from src.windows.home_window import HomeWindow
 from src.windows.login_window import LoginWindow
+from src.windows.main_window import MainWindow
+
 from src.application.application import Application
 from src.widgets.network_manager import ApiClient
