@@ -57,15 +57,24 @@ class Decorators:
 
             return wrapper
         
-        if isclass(target):
+        elif isclass(target):
+            original_init = target.__init__
+            
+            @wraps(original_init)
+            def new_init(self, *args, **kwargs):
+                self.api = ApiClient()
+                original_init(self, *args, **kwargs)
+            
+            target.__init__ = new_init
+            
             for attr_name in dir(target):
                 if attr_name.startswith("__"):
                     continue
-            
-            attr = getattr(target, attr_name)
-            if isfunction(attr):
-                decorated = Decorators.api(attr)
-                setattr(target, attr_name, decorated)
+                
+                attr = getattr(target, attr_name)
+                if isfunction(attr):
+                    decorated = Decorators.api(attr)
+                    setattr(target, attr_name, decorated)
             
             return target
 
