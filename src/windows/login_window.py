@@ -60,6 +60,9 @@ class LoginWindow(QWidget):
         )
         
         message_box.exec()
+        
+        main_window = get_property("MainWindow")
+        main_window.open_window(HomeWindow)
     
     def _on_register_complete(self):
         panel : RegisterPanel = self.open_panel
