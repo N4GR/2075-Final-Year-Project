@@ -1,6 +1,8 @@
 from src.shared.funcs import *
 import logging
 from functools import wraps
+from inspect import isfunction, isclass
+
 logging.basicConfig(
     level = logging.INFO,
     format = "[%(asctime)s] [%(name)s]: %(message)s",
@@ -42,14 +44,30 @@ class Decorators:
         return cls
     
     @staticmethod
-    def api(func):
+    def api(target):
         from src.widgets.network_manager import ApiClient
         
-        @wraps(func)
-        def wrapper(self, *args, **kwargs):
-            if not hasattr(self, "api") or self.api is None:
-                self.api = ApiClient()
-                
-            return func(self, *args, **kwargs)
+        if isfunction(target):
+            @wraps(target)
+            def wrapper(self, *args, **kwargs):
+                if not hasattr(self, "api") or self.api is None:
+                    self.api = ApiClient()
+            
+                return target(self, *args, **kwargs)
 
-        return wrapper
+            return wrapper
+        
+        if isclass(target):
+            for attr_name in dir(target):
+                if attr_name.startswith("__"):
+                    continue
+            
+            attr = getattr(target, attr_name)
+            if isfunction(attr):
+                decorated = Decorators.api(attr)
+                setattr(target, attr_name, decorated)
+            
+            return target
+
+        else:
+            raise TypeError("@Decorators.api can only be used on a function or class.")
