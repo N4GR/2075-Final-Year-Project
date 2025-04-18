@@ -51,6 +51,29 @@ class LoginWindow(QWidget):
         self.main_layout.addWidget(self.open_panel)
         
         return True
+    
+    def _on_login_complete(self):
+        message_box = QMessageBox(
+            QMessageBox.Icon.Information,
+            "Login Success",
+            "You've successfully been authenticated."
+        )
+        
+        message_box.exec()
+    
+    def _on_register_complete(self):
+        panel : RegisterPanel = self.open_panel
+        username_input : UsernameInput = panel.username_input
+        password_input : PasswordInput = panel.password_input
+        
+        username = username_input.text()
+        password = password_input.text()
+        
+        from src.widgets.authentication import SRPLogin
+        self.login = SRPLogin(self, username, password)
+        login_button : LoginButton = get_property("LoginButton")
+        self.login.error_signal.connect(login_button._on_error)
+        self.login.login()
 
 @Decorators.autolog
 @Decorators.property
@@ -243,6 +266,7 @@ class Button(QPushButton):
         )
 
 @Decorators.autolog
+@Decorators.property
 class LoginButton(Button):
     log : logging.Logger
     
@@ -359,17 +383,22 @@ class RegisterButton(Button):
         
         from src.widgets.authentication import SRPRegister
         
-        self.register = SRPRegister(self, username, password, profile_src).register()
+        self.register = SRPRegister(self, username, password, profile_src)
+        self.register.error_signal.connect(self._error_signal)
+        self.register.register()
     
-    def _registration_complete(self):
-        from src.widgets.authentication import Login
+    def _error_signal(self, data: dict):
+        error_code = data.get("code")
+        error_message = data.get("error")
+        
+        if not error_code or not error_message:
+            return
         
         panel : RegisterPanel = self.parentWidget()
         username_input : UsernameInput = panel.username_input
         password_input : PasswordInput = panel.password_input
         
-        username = username_input.text()
-        password = password_input.text()
+        username_input.set_error(f"{error_code} - {error_message}")
 
 @Decorators.property
 class ProfileSelection(QWidget):

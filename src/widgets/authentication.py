@@ -79,8 +79,8 @@ class SRPRegister(QObject):
         
         self.log.info(f"Upload complete of [{self.profile_src}]")
         
-        parent : QWidget = self.parent()
-        parent._registration_complete()
+        login_window : LoginWindow = get_property("LoginWindow")
+        login_window._on_register_complete()
 
 @Decorators.autolog
 @Decorators.api
@@ -190,6 +190,10 @@ class SRPLogin(QObject):
         
         set_property("AccessToken", access_token)
         set_property("AccessTokenExpiry", access_token_expiry)
+        set_property("Username", self.username)
         
         self.log.info(f"Setting keyring service with name 'metaphrast' and username 'refresh_token'")
         keyring.set_password("metaphrast", "refresh_token", refresh_token)
+
+        login_window : LoginWindow = get_property("LoginWindow")
+        login_window._on_login_complete()

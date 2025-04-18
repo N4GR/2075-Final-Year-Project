@@ -39,7 +39,7 @@ class ApiClient(QObject):
             return
         
         # Get the connection and call it with the data.
-        connection : Callable = self._connections[reply]
+        connection : Callable = self._connections.pop(reply)
         if connection:
             connection(data)
     
@@ -131,7 +131,7 @@ class ApiClient(QObject):
         reply.errorOccurred.connect(lambda err: self.log.info(f"Upload error: {err} [{file_src}]"))
 
     def _on_timeout(self, reply: QNetworkReply):
-        timer = self._timers[reply]
+        timer = self._timers.get(reply)
         if not timer:
             return
         
