@@ -285,9 +285,23 @@ class LoginButton(Button):
         username = username_input.text()
         password = password_input.text()
         
-        from src.widgets.authentication import Login
+        from src.widgets.authentication import SRPLogin
+        self.login = SRPLogin(self, username, password)
+        self.login.error_signal.connect(self._on_error)
+        self.login.login()
+    
+    def _on_error(self, error: dict):
+        code : int = error["code"]
+        message : str = error["error"]
         
-        self.login = Login(self, username, password).run()
+        panel : LoginPanel = self.parentWidget()
+        username_input : UsernameInput = panel.username_input
+        password_input : PasswordInput = panel.password_input
+        
+        username_input.reset()
+        password_input.reset()
+        
+        username_input.set_error(f"{code} - {message}")
     
 @Decorators.autolog
 class RegisterButton(Button):
@@ -343,9 +357,9 @@ class RegisterButton(Button):
         else:
             profile_src = path(profile_upload.uploading_profile)
         
-        from src.widgets.authentication import Register
+        from src.widgets.authentication import SRPRegister
         
-        self.register = Register(self, username, password, profile_src).run()
+        self.register = SRPRegister(self, username, password, profile_src).register()
     
     def _registration_complete(self):
         from src.widgets.authentication import Login
@@ -356,8 +370,6 @@ class RegisterButton(Button):
         
         username = username_input.text()
         password = password_input.text()
-        
-        self.login = Login(self, username, password).run()
 
 @Decorators.property
 class ProfileSelection(QWidget):
