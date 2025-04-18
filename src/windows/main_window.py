@@ -43,7 +43,7 @@ class MainWindow(QWidget):
             else:
                 current_window.deleteLater()
         
-        self.opened_window : QWidget = LoginWindow(self)
+        self.opened_window : QWidget = window(self)
         set_property("OpenedWindow", self.opened_window)
         
         self.main_layout.addWidget(self.opened_window)
