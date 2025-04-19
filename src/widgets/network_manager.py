@@ -7,7 +7,9 @@ import json
 from typing import Callable
 
 from src.shared.decorators import Decorators
+from src.shared.objects import *
 from src.shared.funcs import *
+from src.shared.globals import *
 
 @Decorators.autolog
 class ApiClient(QObject):
@@ -43,6 +45,17 @@ class ApiClient(QObject):
         if connection:
             connection(data)
     
+    def add_timer(self, reply: QNetworkReply):
+        timer = QTimer(self)
+        timer.setSingleShot(True)
+        timer.setInterval(self.timeout)
+        timer.timeout.connect(lambda : self._on_timeout(reply))
+        timer.start()
+                    
+        self._timers[reply] = timer
+        
+        return timer
+    
     def post(self, url: str, payload: dict, connection: Callable = None):
         self.log.info(f"Sending POST request to [{url}]")
         
@@ -55,14 +68,7 @@ class ApiClient(QObject):
         
         if connection:
             self._connections[reply] = connection
-            
-            timer = QTimer(self)
-            timer.setSingleShot(True)
-            timer.setInterval(self.timeout)
-            timer.timeout.connect(lambda : self._on_timeout(reply))
-            timer.start()
-                        
-            self._timers[reply] = timer
+            self.add_timer(reply)
     
     def upload_file(
             self,
@@ -116,20 +122,33 @@ class ApiClient(QObject):
         
         if reply_connection:
             self._connections[reply] = reply_connection
-            
-            timer = QTimer(self)
-            timer.setSingleShot(True)
-            timer.setInterval(self.timeout)
-            timer.timeout.connect(lambda : self._on_timeout(reply))
-            timer.start()
-                        
-            self._timers[reply] = timer
+            self.add_timer(reply)
         
         if progress_connection:
             reply.uploadProgress.connect(progress_connection)
         
         reply.errorOccurred.connect(lambda err: self.log.info(f"Upload error: {err} [{file_src}]"))
 
+    def get_user(self, id: str, connection: Callable):
+        """Gets a user from the database using their ID."""
+        request = QNetworkRequest(QUrl(API_USER_GET))
+        
+        # Attach access token.
+        access_token = get_property("AccessToken")
+        if not access_token:
+            self.log.info(f"Couldn't get property: AccessToken for POST [{API_USER_GET}] ({id})")
+            
+            return
+        
+        self.log.info(f"Sending POST request to obtain user: {id} from [{API_USER_GET}]")
+        request.setHeader(QNetworkRequest.KnownHeaders.ContentTypeHeader, "application/json")
+        request.setRawHeader(b"Authorization", f"Bearer {access_token}".encode())
+        json_data = QJsonDocument.fromVariant({"id": id}).toJson()
+        reply = self.network_manager.post(request, json_data)
+        
+        self._connections[reply] = connection
+        self.add_timer(reply)
+    
     def _on_timeout(self, reply: QNetworkReply):
         timer = self._timers.get(reply)
         if not timer:

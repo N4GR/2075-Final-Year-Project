@@ -162,13 +162,17 @@ class SRPLogin(QObject):
         access_token_expiry = data.get("access_token_expiry")
         refresh_token = data.get("refresh_token")
         refresh_token_expiry = data.get("refresh_token_expiry")
+        id = data.get("id")
+        profile_picture = data.get("profile_picture")
         
         fields = {
             "hamk_hex": hamk_hex,
             "access_token": access_token,
             "access_token_expiry": access_token_expiry,
             "refresh_token": refresh_token,
-            "refresh_token_expiry": refresh_token_expiry
+            "refresh_token_expiry": refresh_token_expiry,
+            "id": id,
+            "profile_picture": profile_picture
         }
         
         for name, value in fields.items():
@@ -191,9 +195,12 @@ class SRPLogin(QObject):
         set_property("AccessToken", access_token)
         set_property("AccessTokenExpiry", access_token_expiry)
         set_property("Username", self.username)
+        set_property("ID", id)
+        set_property("ProfilePicture", bytes.fromhex(profile_picture))
         
         self.log.info(f"Setting keyring service with name 'metaphrast' and username 'refresh_token'")
         keyring.set_password("metaphrast", "refresh_token", refresh_token)
+
 
         login_window : LoginWindow = get_property("LoginWindow")
         login_window._on_login_complete()

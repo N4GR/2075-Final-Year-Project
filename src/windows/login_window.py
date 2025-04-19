@@ -62,6 +62,8 @@ class LoginWindow(QWidget):
         message_box.exec()
         
         main_window = get_property("MainWindow")
+        topbar_widget : TopBarWidget = get_property("TopBarWidget")
+        topbar_widget.set_logged_in()
         main_window.open_window(HomeWindow)
     
     def _on_register_complete(self):
