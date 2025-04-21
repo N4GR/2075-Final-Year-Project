@@ -32,6 +32,7 @@ from src.shared.pil import *
 from src.shared.objects import *
 from src.shared.decorators import Decorators
 
+from src.widgets.network_manager import ApiClient
 from src.widgets.topbar_widget import TopBarWidget
 from src.widgets.server_list import ServerListWidget
 
@@ -40,4 +41,4 @@ from src.windows.login_window import LoginWindow
 from src.windows.main_window import MainWindow
 
 from src.application.application import Application
-from src.widgets.network_manager import ApiClient
+from src.application.sql_manager import SQLManager

@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QApplication
 
+from src.application.sql_manager import SQLManager
 from src.windows.main_window import MainWindow
 from src.shared.funcs import load_font
 
@@ -23,3 +24,5 @@ class Application(QApplication):
         """Sets the widgets to the application."""
         self.main_window = MainWindow()
         self.main_window.show()
+        
+        self.sql_manager = SQLManager()
