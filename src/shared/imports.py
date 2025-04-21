@@ -34,7 +34,6 @@ from src.shared.decorators import Decorators
 
 from src.widgets.network_manager import ApiClient
 from src.widgets.topbar_widget import TopBarWidget
-from src.widgets.server_list import ServerListWidget
 
 from src.windows.home_window import HomeWindow
 from src.windows.login_window import LoginWindow
