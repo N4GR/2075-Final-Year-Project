@@ -4,19 +4,22 @@ import logging
 import json
 import sys
 import random
+from datetime import datetime
+from uuid import UUID
 
 # Third-party imports.
 from PySide6.QtWidgets import (
     QWidget, QApplication, QVBoxLayout, QLabel, QSizePolicy, QHBoxLayout, QSpacerItem,
-    QLineEdit, QPushButton, QGraphicsDropShadowEffect, QGridLayout, QFileDialog, QMessageBox
+    QLineEdit, QPushButton, QGraphicsDropShadowEffect, QGridLayout, QFileDialog, QMessageBox,
+    QScrollArea, QTextEdit
 )
 
 from PySide6.QtGui import (
-    QResizeEvent, QColor, QPixmap, QIcon, QAction
+    QResizeEvent, QColor, QPixmap, QIcon, QAction, QMouseEvent
 )
 
 from PySide6.QtCore import (
-    Qt, QSize, Slot, QUrl, QByteArray, QObject, Signal
+    Qt, QSize, Slot, QUrl, QByteArray, QObject, Signal, QTimer
 )
 
 from PySide6.QtNetwork import (
@@ -30,6 +33,7 @@ from src.shared.globals import *
 from src.shared.funcs import *
 from src.shared.pil import *
 from src.shared.objects import *
+from src.shared.keys import *
 from src.shared.decorators import Decorators
 
 from src.widgets.network_manager import ApiClient

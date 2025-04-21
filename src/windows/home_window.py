@@ -1,5 +1,8 @@
 from src.shared.imports import *
 
+from src.widgets.dm_list import DMListWidget
+from src.widgets.chat_widget import ChatWidget
+
 @Decorators.autolog
 @Decorators.property
 class HomeWindow(QWidget):
@@ -25,12 +28,13 @@ class HomeWindow(QWidget):
         self.setGraphicsEffect(self.effect)
     
     def _set_widgets(self):
-        self.server_list_widget = ServerListWidget(self)
+        self.dm_list_widget = DMListWidget(self)
+        self.chat_widget = ChatWidget(self)
     
     def _set_layout(self):
         self.main_layout = QHBoxLayout()
         
-        self.main_layout.addWidget(self.server_list_widget, alignment = Qt.AlignmentFlag.AlignLeft)
-        self.main_layout.addItem(QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding))
-        
+        self.main_layout.addWidget(self.dm_list_widget)
+        self.main_layout.addWidget(self.chat_widget)
+
         self.setLayout(self.main_layout)

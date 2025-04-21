@@ -11,8 +11,6 @@ class MainWindow(QWidget):
         self._set_widgets()
         self._set_layout()
         
-        self.log.info("Hello")
-        
         self.open_window(LoginWindow)
     
     def _set_style(self):
