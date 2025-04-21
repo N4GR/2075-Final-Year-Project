@@ -56,13 +56,17 @@ class ApiClient(QObject):
         
         return timer
     
-    def post(self, url: str, payload: dict, connection: Callable = None):
+    def post(self, url: str, payload: dict, connection: Callable = None, auth: bool = False):
         self.log.info(f"Sending POST request to [{url}]")
         
         request = QNetworkRequest(QUrl(url))
         request.setHeader(QNetworkRequest.KnownHeaders.ContentTypeHeader, "application/json")
         
         json_data = QJsonDocument.fromVariant(payload).toJson()
+        
+        if auth:
+            access_token = get_property("AccessToken")
+            request.setRawHeader(b"Authorization", f"Bearer {access_token}".encode())
         
         reply = self.network_manager.post(request, json_data)
         
@@ -128,26 +132,6 @@ class ApiClient(QObject):
             reply.uploadProgress.connect(progress_connection)
         
         reply.errorOccurred.connect(lambda err: self.log.info(f"Upload error: {err} [{file_src}]"))
-
-    def get_user(self, id: str, connection: Callable):
-        """Gets a user from the database using their ID."""
-        request = QNetworkRequest(QUrl(API_USER_GET))
-        
-        # Attach access token.
-        access_token = get_property("AccessToken")
-        if not access_token:
-            self.log.info(f"Couldn't get property: AccessToken for POST [{API_USER_GET}] ({id})")
-            
-            return
-        
-        self.log.info(f"Sending POST request to obtain user: {id} from [{API_USER_GET}]")
-        request.setHeader(QNetworkRequest.KnownHeaders.ContentTypeHeader, "application/json")
-        request.setRawHeader(b"Authorization", f"Bearer {access_token}".encode())
-        json_data = QJsonDocument.fromVariant({"id": id}).toJson()
-        reply = self.network_manager.post(request, json_data)
-        
-        self._connections[reply] = connection
-        self.add_timer(reply)
     
     def _on_timeout(self, reply: QNetworkReply):
         timer = self._timers.get(reply)
@@ -168,3 +152,16 @@ class ApiClient(QObject):
         popup.setStandardButtons(QMessageBox.StandardButton.Cancel | QMessageBox.StandardButton.Ok)
         
         popup.exec()
+    
+    def get(self, url: str, connection: Callable, auth: bool = False):
+        self.log.info(f"Sending GET request to [{url}]")
+        request = QNetworkRequest(QUrl(url))
+        
+        if auth:
+            access_token = get_property("AccessToken")
+            request.setRawHeader(b"Authorization", f"Bearer {access_token}".encode())
+        
+        reply = self.network_manager.get(request)
+        
+        self._connections[reply] = connection
+        self.add_timer(reply)
