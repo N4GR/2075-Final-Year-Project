@@ -61,7 +61,6 @@ class CreateChatObject(QObject):
         
         # Add the chat to chats SQL table.
         sql_manager : SQLManager = get_property("SQLManager")
-        
         existing_chat = sql_manager.get_chat(self.chat_id)
         
         if not existing_chat:
@@ -112,6 +111,94 @@ class GetMessagesObject(QObject):
         
         messages_from_db = sql_manager.get_messages(self.chat_id)
         self.messages_signal.emit(messages_from_db)
+
+@Decorators.api
+@Decorators.autolog
+class Message(QObject):
+    api: ApiClient
+    log: logging.Logger
+    
+    def __init__(self, parent: QWidget):
+        super().__init__(parent)
+    
+    def send(self, chat_id: UUID, message: str):
+        """Sends a message to a user by their ID.
+        
+        Args:
+            recipient_id (UUID): ID of the user to send the message to.
+            message (str): Message to send to the user.
+        """
+        def _public_key_reply(data):
+            data = json.loads(data)
+        
+            _encrypt_and_send(bytes.fromhex(data.get("public_key")))
+        
+        def _encrypt_and_send(recipient_public_key: bytes):
+            # Generate a shared secret for the sender and recipient.
+            shared_secret = os.urandom(32)
+            sender_shared_secret = generate_shared_secret(shared_secret, get_property("PublicKey"))
+            recipient_shared_secret = generate_shared_secret(shared_secret, recipient_public_key)
+            
+            # Encrypt the message being sent.
+            iv, encrypted_message = encrypt_message(message, shared_secret)
+            
+            # Send the data to the API.
+            self.api.post(
+                url = API_SEND_MESSAGE,
+                payload = {
+                    "sender_id": get_property("ID"),
+                    "recipient_id": recipient_id.hex,
+                    "encrypted_message": encrypted_message.hex(),
+                    "iv": iv.hex(),
+                    "encrypted_secret_sender_hex": sender_shared_secret.hex(),
+                    "encrypted_secret_recipient_hex": recipient_shared_secret.hex()
+                },
+                connection = _message_sent_reply,
+                auth = True
+            )
+        
+        def _message_sent_reply(data):
+            data = json.loads(data)
+            
+            # Add the message to the chat.
+            chat_widget : ChatWidget = get_property("ChatWidget")
+            scroll_layout : QVBoxLayout = chat_widget.scroll_layout
+            
+            scroll_layout.addWidget(MessageWidget(
+                chat_widget,
+                {
+                    "message_id": UUID(data.get("message_id")),
+                    "chat_id": UUID(data.get("chat_id")),
+                    "sender_id": UUID(data.get("sender_id")),
+                    "recipient_id": UUID(data.get("recipient_id")),
+                    "encrypted_message": bytes.fromhex(data.get("encrypted_message")),
+                    "iv": bytes.fromhex(data.get("iv")),
+                    "encrypted_shared_secret_for_sender": bytes.fromhex(data.get("encrypted_secret_for_sender")),
+                    "encrypted_shared_secret_for_recipient": bytes.fromhex(data.get("encrypted_secret_for_recipient")),
+                    "sent_at": datetime.fromtimestamp(float(data.get("sent_at")))
+                }
+            ))
+        
+        # Obtain the chat data.
+        sql_manager : SQLManager = get_property("SQLManager")
+        chat_data = sql_manager.get_chat(chat_id.hex)
+        
+        if chat_data["sender_id"] == UUID(get_property("ID")):
+            recipient_id = chat_data["recipient_id"]
+        
+        else:
+            recipient_id = chat_data["sender_id"]
+        
+        self.api.post(API_GET_PUBLIC_KEY, {"id": recipient_id.hex}, _public_key_reply, auth = True)
+
+class MessageListener(QObject):
+    on_message_signal = Signal(dict)
+    
+    def __init__(self, parent: QWidget):
+        """A Qobject intended to be used as a QThread to listen for incoming messages."""
+        super().__init__(parent)
+
+    
 
 @Decorators.autolog
 @Decorators.api
@@ -189,6 +276,7 @@ class ChatWidget(QWidget):
         self.log.info(f"Opening chat: {chat_id.hex}")
 
 @Decorators.api
+@Decorators.property
 class MessageWidget(QWidget):
     api : ApiClient
     
@@ -259,8 +347,15 @@ class MessageWidget(QWidget):
     
     def _set_user_label(self):
         def _get_profile_reply(data):
-            data = json.loads(data)
-            profile_picture = bytes.fromhex(data["profile_picture"])
+            if type(data) != dict:
+                data = json.loads(data)
+            
+            if type(data["profile_picture"]) != bytes:
+                profile_picture = bytes.fromhex(data["profile_picture"])
+            
+            else:
+                profile_picture = data["profile_picture"]
+                
             username = data["username"]
             
             pixmap = QPixmap()
@@ -272,15 +367,32 @@ class MessageWidget(QWidget):
             ))
 
             self.user_name.setText(username)
+            
+            # Add the user's profile to the database.
+            sql_manager : SQLManager = get_property("SQLManager")
+            profile = sql_manager.get_profile(user_id = self.sender_id)
+            
+            if not profile:
+                sql_manager.add_profile(self.sender_id, username, profile_picture)
         
         self.user_layout = QHBoxLayout()
         self.user_layout.setSpacing(10)
         
-        self.api.post(API_FILE_PROFILE, {"user_id": self.sender_id.hex}, _get_profile_reply, auth = True)
         self.user_picture = QLabel(self)
         self.user_picture.setFixedSize(20, 20)
         
         self.user_name = QLabel(self)
+        
+        sql_manager : SQLManager = get_property("SQLManager")
+        profile = sql_manager.get_profile(user_id = self.sender_id)
+        
+        if not profile:
+            self.api.post(API_FILE_PROFILE, {"user_id": self.sender_id.hex}, _get_profile_reply, auth = True)
+        else:
+            _get_profile_reply(data = {
+                "username": profile["username"],
+                "profile_picture": profile["profile"]
+            })
 
         self.timestamp = QLabel(self)
         self.timestamp.setText(self.sent_at.strftime("%d/%m/%Y, %H:%M:%S"))
@@ -337,7 +449,10 @@ class MessageBox(QWidget):
             self.effect.setColor(QColor(0, 0, 0, 100))
             self.setGraphicsEffect(self.effect)
     
+    @Decorators.autolog
     class SendMessageButton(QPushButton):
+        log : logging.Logger
+        
         def __init__(self, parent: QWidget):
             super().__init__(parent)
             self._set_style()
@@ -359,4 +474,14 @@ class MessageBox(QWidget):
             self.setGraphicsEffect(self.effect)
         
         def _on_click(self):
-            print("Sending message")
+            message_area : QTextEdit = self.parentWidget().message_area
+            message_widget : MessageWidget = get_property("MessageWidget")
+            
+            message_text = message_area.toPlainText()
+            if not message_text:
+                return
+            
+            self.message = Message(self)
+            self.message.send(message_widget.chat_id, message_text)
+            
+            self.log.info(f"Sending message to chat [{message_widget.chat_id}]")

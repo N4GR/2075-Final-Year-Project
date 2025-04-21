@@ -127,6 +127,7 @@ class SQLManager:
         self._cursor.execute("""
             SELECT * FROM messages
             WHERE chat_id = ?
+            ORDER BY sent_at ASC
         """, (chat_id,))
         
         fetch = self._cursor.fetchall()
@@ -146,3 +147,31 @@ class SQLManager:
             })
         
         return fixed_fetch
+    
+    def get_profile(self, user_id: UUID = None, username: str = None) -> dict[str, UUID | str | bytes]:
+        field = "user_id" if user_id else "username"
+        data = user_id.hex if user_id else username
+        
+        query = f"""
+            SELECT * FROM profiles
+            WHERE {field} = ?
+        """
+        
+        self._cursor.execute(query, (data,))
+        fetch = self._cursor.fetchone()
+        if not fetch: return None
+        
+        return {
+            "user_id": UUID(fetch.user_id),
+            "username": fetch.username,
+            "profile": fetch.profile,
+        }
+    
+    def add_profile(self, user_id: UUID, username: str, profile: bytes):
+        self._cursor.execute("""
+            INSERT INTO profiles (
+                user_id, profile, username
+            ) VALUES (
+                ?, ?, ?
+            )
+        """, (user_id.hex, profile, username))
