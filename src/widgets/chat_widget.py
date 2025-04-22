@@ -1,3 +1,5 @@
+import socketio.client
+import socketio.client
 from src.shared.imports import *
 from src.shared.keys import *
 
@@ -114,14 +116,15 @@ class GetMessagesObject(QObject):
 
 @Decorators.api
 @Decorators.autolog
-class Message(QObject):
+@Decorators.property
+class Chat(QObject):
     api: ApiClient
     log: logging.Logger
     
     def __init__(self, parent: QWidget):
         super().__init__(parent)
     
-    def send(self, chat_id: UUID, message: str):
+    def send_message(self, chat_id: UUID, message: str):
         """Sends a message to a user by their ID.
         
         Args:
@@ -178,6 +181,13 @@ class Message(QObject):
                     "sent_at": datetime.fromtimestamp(float(data.get("sent_at")))
                 }
             ))
+            
+            # Send the message through the socket.
+            home_window : HomeWindow = get_property("HomeWindow")
+            message_listener : MessageListener = home_window.message_listener
+            message_listener.send_message({
+                "message_id": data.get("message_id")
+            })
         
         # Obtain the chat data.
         sql_manager : SQLManager = get_property("SQLManager")
@@ -191,14 +201,18 @@ class Message(QObject):
         
         self.api.post(API_GET_PUBLIC_KEY, {"id": recipient_id.hex}, _public_key_reply, auth = True)
 
-class MessageListener(QObject):
-    on_message_signal = Signal(dict)
-    
-    def __init__(self, parent: QWidget):
-        """A Qobject intended to be used as a QThread to listen for incoming messages."""
-        super().__init__(parent)
-
-    
+    def get_all(self, connection: Callable):
+        """Gets all chats the current user is assosciated with and loads it into the SQLManager.
+        
+        Args:
+            connection (Callable): A function called when the chats are retrieved.
+        """
+        def _get_chats_reply(data):
+            data = json.loads(data)
+            
+            connection(data)
+        
+        self.api.get(API_GET_CHATS, _get_chats_reply, True)
 
 @Decorators.autolog
 @Decorators.api
@@ -320,18 +334,18 @@ class MessageWidget(QWidget):
         self._set_user_label()
         self._set_text()
         
+        # Scale size of message widget to new contents.
+        self.setFixedHeight(self.sizeHint().height())
+        
         # Scroll to bottom after the UI has updated
         chat_widget : ChatWidget = get_property("ChatWidget")
         scroll_area = chat_widget.scroll_area
         
-        QTimer.singleShot(1000, lambda: scroll_area.verticalScrollBar().setValue(
+        QTimer.singleShot(100, lambda: scroll_area.verticalScrollBar().setValue(
             scroll_area.verticalScrollBar().maximum()
         ))
     
     def _set_style(self):
-        self.setFixedHeight(40)
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
-        
         self.effect = QGraphicsDropShadowEffect(self)
         self.effect.setBlurRadius(10)
         self.effect.setOffset(0, 5)
@@ -481,7 +495,9 @@ class MessageBox(QWidget):
             if not message_text:
                 return
             
-            self.message = Message(self)
-            self.message.send(message_widget.chat_id, message_text)
+            message_area.setText("")
+            
+            self.chat = Chat(self)
+            self.chat.send_message(message_widget.chat_id, message_text)
             
             self.log.info(f"Sending message to chat [{message_widget.chat_id}]")

@@ -12,3 +12,5 @@ API_GET_PUBLIC_KEY = API_URL + "/get/public_key"
 API_SEND_MESSAGE = API_URL + "/message/send"
 API_GET_MESSAGES = API_URL + "/get/messages"
 API_GET_CHATS = API_URL + "/get/chats"
+
+API_SOCKET_CONNECT = API_URL + "/socket.io"

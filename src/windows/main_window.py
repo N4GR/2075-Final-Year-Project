@@ -23,6 +23,7 @@ class MainWindow(QWidget):
     
     def _set_layout(self):
         self.main_layout = QVBoxLayout()
+        self.setContentsMargins(0, 0, 0, 0)
         
         self.main_layout.addWidget(self.topbar)
         

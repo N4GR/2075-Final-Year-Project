@@ -27,7 +27,7 @@ class SQLManager:
         
         return Row(*row)
     
-    def add_chat(self, chat_id: str, sender_id: str, recipient_id: str):
+    def add_chat(self, chat_id: str, sender_id: str, recipient_id: str, created_at: str):
         """Adds a chat to the chats table.
         
         Args:
@@ -37,11 +37,12 @@ class SQLManager:
         """
         self._cursor.execute("""
             INSERT INTO chats (
-                chat_id, sender_id, recipient_id
+                chat_id, sender_id, recipient_id,
+                created_at
             ) VALUES (
-                ?, ?, ?
+                ?, ?, ?, ?
             )
-        """, (chat_id, sender_id, recipient_id))
+        """, (chat_id, sender_id, recipient_id, created_at))
     
     def get_chat(self, chat_id: str) -> dict[str, UUID] | None:
         """Gets a chat from the SQLManager using the chat id.
@@ -175,3 +176,20 @@ class SQLManager:
                 ?, ?, ?
             )
         """, (user_id.hex, profile, username))
+    
+    def get_all_chats(self) -> list[dict[str, str]]:
+        self._cursor.execute("SELECT * FROM chats")
+        fetch = self._cursor.fetchall()
+        
+        if not fetch: return None
+        
+        fetching : list[dict[str, str]] = []
+        for item in fetch:
+            fetching.append({
+                "chat_id": item.chat_id,
+                "sender_id": item.sender_id,
+                "recipient_id": item.recipient_id,
+                "created_at": item.created_at
+            })
+        
+        return fetching

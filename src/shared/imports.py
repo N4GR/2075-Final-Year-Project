@@ -6,20 +6,23 @@ import sys
 import random
 from datetime import datetime
 from uuid import UUID
+from typing import Callable
+
 
 # Third-party imports.
 from PySide6.QtWidgets import (
     QWidget, QApplication, QVBoxLayout, QLabel, QSizePolicy, QHBoxLayout, QSpacerItem,
     QLineEdit, QPushButton, QGraphicsDropShadowEffect, QGridLayout, QFileDialog, QMessageBox,
-    QScrollArea, QTextEdit
+    QScrollArea, QTextEdit, QGraphicsOpacityEffect
 )
 
 from PySide6.QtGui import (
-    QResizeEvent, QColor, QPixmap, QIcon, QAction, QMouseEvent
+    QResizeEvent, QColor, QPixmap, QIcon, QAction, QMouseEvent, QMovie
 )
 
 from PySide6.QtCore import (
-    Qt, QSize, Slot, QUrl, QByteArray, QObject, Signal, QTimer
+    Qt, QSize, Slot, QUrl, QByteArray, QObject, Signal, QTimer, QPropertyAnimation,
+    QEasingCurve, QThread
 )
 
 from PySide6.QtNetwork import (
@@ -27,6 +30,7 @@ from PySide6.QtNetwork import (
 )
 
 import keyring
+import socketio
 
 # Local imports.
 from src.shared.globals import *
@@ -38,6 +42,7 @@ from src.shared.decorators import Decorators
 
 from src.widgets.network_manager import ApiClient
 from src.widgets.topbar_widget import TopBarWidget
+from src.widgets.message_listener import MessageListener
 
 from src.windows.home_window import HomeWindow
 from src.windows.login_window import LoginWindow
