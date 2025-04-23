@@ -17,6 +17,8 @@ class MainWindow(QWidget):
         self.setMinimumSize(800, 600)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         #self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+        
+        self.setWindowTitle("Metaphrast")
     
     def _set_widgets(self):
         self.topbar = TopBarWidget(self)

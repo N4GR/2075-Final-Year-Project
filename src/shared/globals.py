@@ -1,4 +1,4 @@
-API_URL = "https://api.n4gr.uk/"
+API_URL = "http://localhost:8080"
 
 API_SRP_START = API_URL + "/srp/start"
 API_SRP_VERIFY = API_URL + "/srp/verify"

@@ -46,6 +46,13 @@ class HomeWindow(QWidget):
         """Starts the loading process, displaying a loading screen."""
         def _get_all_chats_reply(data):
             """Adds all the chats to the SQLManager once a successful call."""
+            if "error" in data:
+                self.log.info(f"[{data['code']}] - {data['error']}")
+                
+                self.on_loading_complete()
+                
+                return
+            
             sql_manager : SQLManager = get_property("SQLManager")
             for chat in data:
                 # Check if the chat is already in there.

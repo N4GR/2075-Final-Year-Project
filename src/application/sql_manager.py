@@ -64,7 +64,8 @@ class SQLManager:
         return {
             "chat_id": UUID(fetch.chat_id),
             "sender_id": UUID(fetch.sender_id),
-            "recipient_id": UUID(fetch.recipient_id)
+            "recipient_id": UUID(fetch.recipient_id),
+            "created_at": datetime.fromtimestamp(float(fetch.created_at))
         }
     
     def add_message(

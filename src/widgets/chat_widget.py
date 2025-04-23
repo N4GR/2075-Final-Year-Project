@@ -1,5 +1,3 @@
-import socketio.client
-import socketio.client
 from src.shared.imports import *
 from src.shared.keys import *
 
@@ -13,6 +11,7 @@ class CreateChatObject(QObject):
     api : ApiClient
     
     error_signal = Signal(dict)
+    finished = Signal(dict)
     
     def __init__(self, parent: QWidget, message: str, recipient_username: str):
         super().__init__(parent)
@@ -29,6 +28,13 @@ class CreateChatObject(QObject):
     
     def _recipient_key_reply(self, data):
         data = json.loads(data)
+        
+        if "error" in data:
+            self.log.info(f"[{data['code']}] - {data['error']}")
+            self.error_signal.emit(data)
+            
+            return
+        
         recipient_public_key = bytes.fromhex(data.get("public_key"))
         self.recipient_id = data.get("id")
         sender_id = get_property("ID")
@@ -60,13 +66,16 @@ class CreateChatObject(QObject):
         message_id = data.get("message_id")
         self.chat_id = data.get("chat_id")
         sender_id = get_property("ID")
+        created_at = data.get("created_at")
         
         # Add the chat to chats SQL table.
         sql_manager : SQLManager = get_property("SQLManager")
         existing_chat = sql_manager.get_chat(self.chat_id)
         
         if not existing_chat:
-            sql_manager.add_chat(self.chat_id, sender_id, self.recipient_id)
+            sql_manager.add_chat(self.chat_id, sender_id, self.recipient_id, created_at)
+        
+        self.finished.emit({"chat_id": self.chat_id})
 
 @Decorators.autolog
 @Decorators.api
@@ -226,7 +235,9 @@ class ChatWidget(QWidget):
         self._set_style()
         self._set_layout()
         
-        self._opened_chat = []
+        self._opened_chat : UUID = None
+        self._opened_messages : list[MessageWidget] = []
+        self._message_box_showing = False
     
     def _set_style(self):
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -250,24 +261,20 @@ class ChatWidget(QWidget):
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         
-        scroll_content = QWidget()
-        self.scroll_layout = QVBoxLayout(scroll_content)
+        self.scroll_content = QWidget()
+        self.scroll_layout = QVBoxLayout(self.scroll_content)
         
-        self.scroll_area.setWidget(scroll_content)
+        self.scroll_area.setWidget(self.scroll_content)
         
         self.main_layout.addWidget(self.scroll_area)
         
         self.setLayout(self.main_layout)
     
-    def create_chat(self, recipient_username: str, message: str):
-        self.create_chat_object = CreateChatObject(self, message, recipient_username)
-        self.create_chat_object.create_chat()
-    
-    def get_messages(self, chat_id: str):
-        self.get_messages_object = GetMessagesObject(self, chat_id)
-        self.get_messages_object.messages_signal.connect(self._get_messages_reply)
-        self.get_messages_object.get_messages()
-    
+    def create_chat(self, chat_id: str):
+        # Obtain the chat data.
+        sql_manager : SQLManager = get_property("SQLManager")
+        chat_data = sql_manager.get_chat(chat_id)
+        
     def _get_messages_reply(self, reply: dict):
         print(reply)
     
@@ -275,14 +282,46 @@ class ChatWidget(QWidget):
         def get_chat_messages():
             def _messages_reply(data: list):
                 for message in data:
-                    self.scroll_layout.addWidget(MessageWidget(self, message))
+                    message_widget = MessageWidget(self, message)
+                    self.scroll_layout.addWidget(message_widget)
+                    
+                    self._opened_messages.append(message_widget)
+                
+                # If the scroll area bar isn't showing, push messages down with a spacer.
+                if not self.scroll_area.verticalScrollBar().isVisible():
+                    self.scroll_layout.insertSpacerItem(
+                        0,
+                        QSpacerItem(
+                            0, 0,
+                            QSizePolicy.Policy.Expanding,
+                            QSizePolicy.Policy.Expanding
+                    ))
 
             self.get_messages_object = GetMessagesObject(self, self.chat_id.hex)
             self.get_messages_object.messages_signal.connect(_messages_reply)
             self.get_messages_object.get_messages()
         
-        self.message_box = MessageBox(self)
-        self.main_layout.addWidget(self.message_box)
+        if self._opened_chat == chat_id:
+            return
+        
+        else:
+            if self._opened_chat:
+                # Delete all message widgets.
+                for message_widget in self._opened_messages:
+                    message_widget.deleteLater()
+                
+                self._opened_messages = []
+            
+        self._opened_chat = chat_id
+        
+        if not self._message_box_showing:
+            self.message_box = MessageBox(self)
+            self.main_layout.addWidget(self.message_box)
+            
+            self._message_box_showing = True
+        
+        else:
+            self.message_box.message_area.setText("")
         
         self.chat_id = chat_id
         get_chat_messages()
@@ -450,6 +489,10 @@ class MessageBox(QWidget):
             super().__init__(parent)
             self._set_style()
             
+            self._last_ten_sent : list[datetime] = []
+            self._enter_pressed = False
+            self.error_showing = False
+            
         def _set_style(self):
             self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
             self.setStyleSheet(
@@ -462,6 +505,80 @@ class MessageBox(QWidget):
             self.effect.setOffset(0, 5)
             self.effect.setColor(QColor(0, 0, 0, 100))
             self.setGraphicsEffect(self.effect)
+        
+        def keyPressEvent(self, e: QKeyEvent):
+            if e.key() == Qt.Key.Key_Return:
+                self._enter_pressed = True
+                
+                e.accept()
+            
+            else:
+                return super().keyPressEvent(e)
+    
+        def keyReleaseEvent(self, e: QKeyEvent):
+            if e.key() == Qt.Key.Key_Return and self._enter_pressed:
+                self._enter_pressed = False
+                
+                if len(self._last_ten_sent) >= 10:
+                    # Compare the time between first time and last time.
+                    first_time = self._last_ten_sent[0]
+                    time_difference = datetime.now() - first_time
+                    
+                    print(time_difference)
+                    
+                    if time_difference.seconds <= 10:
+                        self.set_error("Calm down buster, you're sending messages too fast!")
+                        e.accept()
+                        
+                        return
+                
+                    self.reset()    
+                    self._last_ten_sent.remove(self._last_ten_sent[0])
+                    
+                self._last_ten_sent.append(datetime.now())
+                
+                parent = self.parentWidget()
+                parent.send_message_button._on_click()
+                
+                e.accept()
+            
+            else:
+                return super().keyReleaseEvent(e)
+    
+        def set_error(self, error_message: str):
+            if self.error_showing is True:
+                self.warning_action.setText(error_message)
+                
+                return
+            
+            self.setStyleSheet(
+                "background-color: #1f1f1f;"
+                "font-size: 15pt;"
+                "border: 2px solid red;"
+                "border-radius: 15px;"
+            )
+            
+            warning_icon = QIcon(path("/assets/icons/warning.png"))
+            self.warning_action = QAction(warning_icon, error_message, self)
+            self.warning_action.setVisible(True)
+            
+            self.addAction(self.warning_action)
+            
+            self.error_showing = True
+        
+        def reset(self):
+            if self.error_showing is False:
+                return
+            
+            for action in self.actions():
+                self.removeAction(action)
+            
+            self.setStyleSheet(
+                "background-color: #1f1f1f;"
+                "font-size: 15pt;"
+            )
+            
+            self.error_showing = False
     
     @Decorators.autolog
     class SendMessageButton(QPushButton):

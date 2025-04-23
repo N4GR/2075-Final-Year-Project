@@ -1,6 +1,9 @@
 from src.shared.imports import *
 
+@Decorators.autolog
 class MessageListener(QThread):
+    log : logging.Logger
+    
     on_message_signal = Signal(dict)
     on_error_signal = Signal(dict)
     
@@ -12,7 +15,7 @@ class MessageListener(QThread):
         self.username = get_property("Username")
         self.access_token = get_property("AccessToken")
         
-        self.sio = socketio.Client(True, 10, 1, logger = True)
+        self.sio = socketio.Client(True, 10, 1)
 
         self.sio.on("connect", self._on_connect)
         self.sio.on("disconnect", self._on_disconnect)
@@ -24,10 +27,10 @@ class MessageListener(QThread):
         )
     
     def _on_connect(self):
-        print("COnnected")
-    
+        self.log.info(f"Socket connected: {API_URL}?={self.username}")
+        
     def _on_disconnect(self):
-        print("Disconnected")
+        self.log.info(f"Socket disconnected: {API_URL}?={self.username}")
     
     def send_message(self, data: dict):
         self.sio.emit("send_message", data)

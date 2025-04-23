@@ -17,12 +17,12 @@ from PySide6.QtWidgets import (
 )
 
 from PySide6.QtGui import (
-    QResizeEvent, QColor, QPixmap, QIcon, QAction, QMouseEvent, QMovie
+    QResizeEvent, QColor, QPixmap, QIcon, QAction, QMouseEvent, QMovie, QKeyEvent
 )
 
 from PySide6.QtCore import (
     Qt, QSize, Slot, QUrl, QByteArray, QObject, Signal, QTimer, QPropertyAnimation,
-    QEasingCurve, QThread
+    QEasingCurve, QThread, QRect
 )
 
 from PySide6.QtNetwork import (

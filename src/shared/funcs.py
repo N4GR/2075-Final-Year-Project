@@ -15,7 +15,11 @@ def get_property(name: str) -> Any:
     Returns
         Any: Any property set in the application.
     """
-    fetched_property = QApplication.instance().property(name)
+    try:
+        fetched_property = QApplication.instance().property(name)
+
+    except:
+        return None
 
     return fetched_property
 
