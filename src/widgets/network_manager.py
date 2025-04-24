@@ -1,9 +1,8 @@
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest, QHttpMultiPart, QHttpPart
 from PySide6.QtCore import QUrl, QObject, QJsonDocument, QTimer, QFile, QIODevice
-from PySide6.QtWidgets import QMessageBox, QLabel
+from PySide6.QtWidgets import QMessageBox
 
 from logging import Logger
-import json
 from typing import Callable
 
 from src.shared.decorators import Decorators

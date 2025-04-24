@@ -3,8 +3,7 @@ import sys
 import os
 
 from PySide6.QtWidgets import QApplication
-from PySide6.QtGui import QFontDatabase, QFont, QPixmap
-from PySide6.QtCore import QByteArray, QBuffer
+from PySide6.QtGui import QFontDatabase, QFont
 
 def get_property(name: str) -> Any:
     """Return a property from the current instance of the application.
