@@ -50,3 +50,5 @@ from src.windows.main_window import MainWindow
 
 from src.application.application import Application
 from src.application.sql_manager import SQLManager
+
+from src.application.ai import AI

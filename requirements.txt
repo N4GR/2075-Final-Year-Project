@@ -3,3 +3,8 @@ srp
 Pillow
 keyring
 cryptography
+python-socketio
+rsa
+torch
+transformers
+sentencepiece

@@ -136,12 +136,13 @@ class SRPLogin(QObject):
         )
     
     def _handle_challenge(self, data):
+        print(data)
         data : dict = json.loads(data)
         
         if "error" in data:
             self.log.info(f"{data['code']} - {data['error']}")
             self.error_signal.emit(data)
-            
+            6
             return
         
         salt_hex = data.get("salt")
