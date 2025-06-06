@@ -1,0 +1,3 @@
+CREATE TABLE `chats` (`chat_id` TEXT PRIMARY KEY, `sender_id` TEXT, `recipient_id` TEXT, `created_at` TEXT) WITHOUT ROWID
+CREATE TABLE `messages` (`chat_id` TEXT REFERENCES `chats`(`chat_id`), `message_id` TEXT PRIMARY KEY, `sender_id` TEXT, `recipient_id` TEXT, `sent_at` TEXT, `encrypted_message` BLOB, `iv` BLOB, `encrypted_shared_secret_for_sender` BLOB, `encrypted_shared_secret_for_recipient` BLOB) WITHOUT ROWID
+CREATE TABLE `profiles` (`user_id` TEXT PRIMARY KEY, `username` TEXT, `profile` BLOB)

@@ -15,7 +15,7 @@ class SQLManager:
     log : Logger
     
     def __init__(self):
-        self._connection = sqlite3.connect(path("/data/metaphrast.sqlite"), autocommit = True)
+        self._connection = sqlite3.connect("file:memb1?mode=memory&cache=shared", uri = True, autocommit = True)
         self._connection.row_factory = self.named_tuple_factory
         
         self._cursor = self._connection.cursor()
